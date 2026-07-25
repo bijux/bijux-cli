@@ -80,24 +80,24 @@ artifacts without taking on runtime execution or command orchestration.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): retained-evidence boundaries,
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/ARCHITECTURE.md): retained-evidence boundaries,
   evidence flow, compatibility surfaces, and extension decisions.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): owned models, effects, dependency
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/CONTRACTS.md): owned models, effects, dependency
   direction, invariants, and stability.
-- [`INTEGRITY_AND_LINEAGE.md`](docs/INTEGRITY_AND_LINEAGE.md): artifact
+- [`INTEGRITY_AND_LINEAGE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/INTEGRITY_AND_LINEAGE.md): artifact
   identity, hashing, proofs, corruption, lineage, cache, and replay evidence.
-- [`RUN_DIRECTORY.md`](docs/RUN_DIRECTORY.md): staging and final layout,
+- [`RUN_DIRECTORY.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/RUN_DIRECTORY.md): staging and final layout,
   atomic records, output indexing, resume, and reader rules.
-- [`SCHEMA_EVOLUTION.md`](docs/SCHEMA_EVOLUTION.md): schema families, reader
+- [`SCHEMA_EVOLUTION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/SCHEMA_EVOLUTION.md): schema families, reader
   and writer compatibility, migration refusal, and integrity-preserving change
   rules.
-- [`STORAGE_AND_LIFECYCLE.md`](docs/STORAGE_AND_LIFECYCLE.md): store
+- [`STORAGE_AND_LIFECYCLE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/STORAGE_AND_LIFECYCLE.md): store
   capabilities, filesystem safety, promotion, retention, import, and archive.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-artifacts/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Reproducibility model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/)
 - [Run evidence layout](https://bijux.io/bijux-core/bijux-dag/interfaces/run-evidence-layout/)

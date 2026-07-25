@@ -84,20 +84,20 @@ or command-layer concerns.
 
 For the repository-backed authoring example that binds a graph-owned label into
 a real container command surface, use
-[`evidence/dag/authoring/examples/release-note-bundle.dag.json`](../../evidence/dag/authoring/examples/release-note-bundle.dag.json).
+[`evidence/dag/authoring/examples/release-note-bundle.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/release-note-bundle.dag.json).
 
 For the repository-backed authoring example that binds a graph-owned enum input
 into a real branch decision surface, use
-[`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](../../evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
+[`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
 
 For the repository-backed authoring example that binds graph-owned path inputs
 into a retryable compliance gate and a repairable publication boundary, use
-[`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](../../evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
+[`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
 
 For the operator-facing explanation of how graph identity relates to plan,
 execution, cache, and replay identity after this crate lowers a graph into
 deterministic execution surfaces, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
+[Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/).
 
 Repository-owned schedule and backfill authoring examples also live under
 `evidence/dag/authoring/examples/`, but they remain internal workflow lanes
@@ -105,23 +105,23 @@ rather than part of the default public `v0.4.0` package story.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): pure-kernel data flow, source
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/ARCHITECTURE.md): pure-kernel data flow, source
   boundaries, dependency direction, and extension decisions.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): owned graph semantics, purity,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/CONTRACTS.md): owned graph semantics, purity,
   validation, identity, and stability contracts.
-- [`GRAPH_MODEL.md`](docs/GRAPH_MODEL.md): graph, node, reference, output,
+- [`GRAPH_MODEL.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/GRAPH_MODEL.md): graph, node, reference, output,
   edge, trigger, composition, and expansion model.
-- [`IDENTITY_AND_VALIDATION.md`](docs/IDENTITY_AND_VALIDATION.md): strict
+- [`IDENTITY_AND_VALIDATION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/IDENTITY_AND_VALIDATION.md): strict
   parsing, diagnostics, canonicalization, fingerprints, and compatibility.
-- [`PLANNING_AND_PUBLIC_API.md`](docs/PLANNING_AND_PUBLIC_API.md): planner
+- [`PLANNING_AND_PUBLIC_API.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/PLANNING_AND_PUBLIC_API.md): planner
   lowering, compile helpers, stable exports, and runtime handoff.
-- [`SERIALIZATION_AND_EVOLUTION.md`](docs/SERIALIZATION_AND_EVOLUTION.md):
+- [`SERIALIZATION_AND_EVOLUTION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/SERIALIZATION_AND_EVOLUTION.md):
   strict input shape, version ownership, canonical compatibility, identity,
   and schema-change procedure.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)

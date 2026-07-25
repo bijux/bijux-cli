@@ -45,7 +45,7 @@ else
   DOCS_ENV      := DISABLE_MKDOCS_2_WARNING=true PYTHONPYCACHEPREFIX="$(abspath $(DOCS_PYCACHE_DIR))"
 endif
 
-.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-publication-check docs-navigation-check docs-mermaid-check
+.PHONY: docs docs-clean docs-serve docs-deploy docs-check docs-hygiene docs-require docs-install docs-publication-check docs-navigation-check docs-mermaid-check readme-links-check sync-readme-links
 
 docs docs-serve docs-deploy docs-check docs-install docs-require: | bootstrap
 
@@ -90,6 +90,7 @@ docs-check: docs-require ## Verify that documentation builds without errors
 	@$(MAKE) --no-print-directory docs-install
 	@$(MAKE) --no-print-directory bijux-docs-check
 	@$(MAKE) --no-print-directory check-badges
+	@$(MAKE) --no-print-directory readme-links-check
 	@$(MAKE) --no-print-directory docs-mermaid-check
 	@mkdir -p "$(DOCS_CACHE_DIR)"
 	@XDG_CACHE_HOME="$(DOCS_CACHE_DIR)" $(DOCS_ENV) ENABLE_SOCIAL_CARDS=$(ENABLE_SOCIAL_CARDS) \
@@ -103,6 +104,12 @@ docs-check: docs-require ## Verify that documentation builds without errors
 
 docs-mermaid-check: ## Reject Mermaid identifiers that conflict with diagram syntax
 	@"$(DOCS_PYTHON_BIN)" docs/automation/mermaid_sanity.py docs
+
+readme-links-check: ## Verify README links use valid public destinations
+	@"$(DOCS_PYTHON_BIN)" docs/automation/readme_links.py check
+
+sync-readme-links: ## Replace local README links with canonical public destinations
+	@"$(DOCS_PYTHON_BIN)" docs/automation/readme_links.py sync
 
 docs-clean: ## Remove generated documentation outputs
 	@echo "Cleaning documentation build artifacts"

@@ -104,7 +104,7 @@ artifacts, cache explanation, and replayable run bundles.
 ## DAG Release Boundary
 
 The machine-readable release authority is
-[`contracts/foundation/dag_release_truth_table.v1.json`](contracts/foundation/dag_release_truth_table.v1.json).
+[`contracts/foundation/dag_release_truth_table.v1.json`](https://github.com/bijux/bijux-core/blob/main/contracts/foundation/dag_release_truth_table.v1.json).
 
 ### `bijux-dag` v0.4.0 Surface Truth Table
 
@@ -116,9 +116,9 @@ The machine-readable release authority is
 | internal | maintainer routes inventoried with `commands --lane internal` and gated by `BIJUX_DAG_ENABLE_INTERNAL=1` |
 | unreleased | generic HPC, public remote workers, scheduler services, and public enterprise or federation APIs |
 
-Use the [Release Boundary](docs/bijux-dag/foundation/release-boundary.md) for
-operator decisions, the [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
-for the shipped release, and [Future Direction](docs/bijux-dag/foundation/future-direction.md)
+Use the [Release Boundary](https://bijux.io/bijux-core/bijux-dag/foundation/release-boundary/) for
+operator decisions, the [v0.4.0 Release Notes](https://bijux.io/bijux-core/bijux-dag/operations/v0-4-0-release-notes/)
+for the shipped release, and [Future Direction](https://bijux.io/bijux-core/bijux-dag/foundation/future-direction/)
 only for capability promotion criteria beyond the current contract.
 
 ## Install And Verify
@@ -140,7 +140,7 @@ bijux-dag commands
 The PyPI package is an alternative distribution of `bijux`; it does not install
 `bijux-dag`. The Python DAG helpers invoke an independently installed
 `bijux-dag` process and do not embed the runtime. See the
-[Python package boundary](crates/bijux-cli-python/README.md) before depending
+[Python package boundary](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/README.md) before depending
 on that process client.
 
 The first commands establish different facts:
@@ -154,7 +154,7 @@ The first commands establish different facts:
 
 None of these commands proves an optional backend is available. Container,
 SLURM, and Kubernetes execution each have additional environment contracts in
-the [DAG operations handbook](docs/bijux-dag/operations/index.md).
+the [DAG operations handbook](https://bijux.io/bijux-core/bijux-dag/operations/).
 
 ## Get A Useful Result
 
@@ -220,7 +220,7 @@ make dag-demo
 
 The demonstration writes beneath `artifacts/dag-demo/`; it does not modify
 product source or turn local output into checked-in evidence. Follow the
-[first-run tutorial](docs/bijux-dag/operations/first-run-tutorial.md) for the
+[first-run tutorial](https://bijux.io/bijux-core/bijux-dag/operations/first-run-tutorial/) for the
 commands that inspect the resulting run directory and verify its artifacts.
 
 ## Operational Trust Boundaries
@@ -233,9 +233,9 @@ commands that inspect the resulting run directory and verify its artifacts.
 | execution backends | local, container, shared-filesystem SLURM, and Kubernetes Job lanes have explicit contracts | backend selection does not create isolation or infrastructure that the host does not provide |
 | performance | named scenarios have owned baselines, thresholds, and evidence classes | repository measurements are not universal capacity or production-sizing claims |
 
-Read [CLI Security and Safety](docs/bijux-cli/operations/security-and-safety.md)
+Read [CLI Security and Safety](https://bijux.io/bijux-core/bijux-cli/operations/security-and-safety/)
 before executing third-party plugins. Read
-[DAG Execution Security and Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
+[DAG Execution Security and Isolation](https://bijux.io/bijux-core/bijux-dag/operations/security-isolation-truth/)
 before treating a backend, container, or path policy as a security boundary.
 
 ## What The Repository Proves
@@ -254,9 +254,9 @@ The repository proves more than command availability:
 
 Each proof is bounded by its selected command, backend, evidence, environment,
 and source revision; none is a blanket production claim. The
-[DAG execution model](docs/bijux-dag/architecture/execution-model.md) explains
+[DAG execution model](https://bijux.io/bijux-core/bijux-dag/architecture/execution-model/) explains
 runtime authority, while the
-[Maintainer handbook](docs/bijux-dev/index.md) explains how repository and
+[Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) explains how repository and
 release claims are proved.
 
 ## Package Families
@@ -280,16 +280,16 @@ Three workspace packages are intentionally excluded from crates.io:
 
 | Package | Repository responsibility | Contract |
 | --- | --- | --- |
-| `bijux-cli-python` | builds and tests the public Python distribution without becoming a separate Cargo release | [Python package contracts](crates/bijux-cli-python/docs/CONTRACTS.md) |
-| `bijux-dag-testkit` | provides deterministic fixtures and assertions to repository tests only | [Testkit contracts](crates/bijux-dag-testkit/docs/CONTRACTS.md) |
-| `bijux-dev` | implements repository governance, report generation, and release evidence | [Maintainer contracts](crates/bijux-dev/docs/CONTRACTS.md) |
+| `bijux-cli-python` | builds and tests the public Python distribution without becoming a separate Cargo release | [Python package contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/CONTRACTS.md) |
+| `bijux-dag-testkit` | provides deterministic fixtures and assertions to repository tests only | [Testkit contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/CONTRACTS.md) |
+| `bijux-dev` | implements repository governance, report generation, and release evidence | [Maintainer contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/CONTRACTS.md) |
 
 Private means unavailable as a crates.io dependency. It does not mean
 unsupported or ungoverned: each package has an explicit boundary and focused
 verification.
 
 The canonical package publication boundary lives in
-[`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
+[`docs/bijux-core/foundation/package-boundary.md`](https://bijux.io/bijux-core/bijux-core/foundation/package-boundary/)
 and `contracts/foundation/workspace_package_boundary.v1.json`.
 
 ## Develop The Repository
@@ -317,7 +317,7 @@ make test
 `make test` runs the fast Rust lane and Python tests not marked `nightly`.
 It does not run governed slow Rust tests, ignored Rust tests, Python nightly
 tests, documentation checks, or lint. Use
-[Testing And Validation](docs/bijux-core/operations/testing-and-validation.md)
+[Testing And Validation](https://bijux.io/bijux-core/bijux-core/operations/testing-and-validation/)
 to select a broader lane without overstating what passed.
 
 Before review, add the gates owned by the changed surface. Documentation
@@ -329,12 +329,12 @@ Python checks in addition to Rust verification.
 
 | Question | Authority |
 | --- | --- |
-| how do I run a checked-in workflow? | [Executable Examples](docs/bijux-dag/interfaces/runnable-examples.md) |
-| which retained files prove a run? | [Run Evidence Layout](docs/bijux-dag/interfaces/run-evidence-layout.md) |
-| what makes two runs equivalent? | [Reproducibility Model](docs/bijux-dag/interfaces/reproducibility-model.md) |
-| what isolation is actually enforced? | [Execution Security And Isolation](docs/bijux-dag/operations/security-isolation-truth.md) |
-| how are repository docs divided? | [Documentation System](docs/bijux-core/foundation/documentation-system.md) |
-| which package owns a behavior? | [Package Ownership](docs/bijux-core/governance/package-ownership.md) and the owning crate's contracts page |
+| how do I run a checked-in workflow? | [Executable Examples](https://bijux.io/bijux-core/bijux-dag/interfaces/runnable-examples/) |
+| which retained files prove a run? | [Run Evidence Layout](https://bijux.io/bijux-core/bijux-dag/interfaces/run-evidence-layout/) |
+| what makes two runs equivalent? | [Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/) |
+| what isolation is actually enforced? | [Execution Security And Isolation](https://bijux.io/bijux-core/bijux-dag/operations/security-isolation-truth/) |
+| how are repository docs divided? | [Documentation System](https://bijux.io/bijux-core/bijux-core/foundation/documentation-system/) |
+| which package owns a behavior? | [Package Ownership](https://bijux.io/bijux-core/bijux-core/governance/package-ownership/) and the owning crate's contracts page |
 | how do maintainers validate changes? | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) |
 
 Use the public handbook for supported behavior, the owning crate contract for

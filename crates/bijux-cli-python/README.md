@@ -86,9 +86,9 @@ from bijux_cli_py import validate_dag_graph
 result = validate_dag_graph(Path("workflow.dag.json"))
 ```
 
-Use the [DAG command surface](../../docs/bijux-dag/interfaces/cli-surface.md)
+Use the [DAG command surface](https://bijux.io/bijux-core/bijux-dag/interfaces/cli-surface/)
 for supported behavior and the
-[release boundary](../../docs/bijux-dag/foundation/release-boundary.md) before
+[release boundary](https://bijux.io/bijux-core/bijux-dag/foundation/release-boundary/) before
 depending on a non-stable route.
 
 ## Mounted Python Apps
@@ -109,7 +109,7 @@ manifest = build_python_mount_manifest(
 )
 ```
 
-The [mounted app guide](./docs/MOUNTED_APPS.md) owns callable shape,
+The [mounted app guide](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md) owns callable shape,
 compatibility checks, manifest placement, stream discipline, and packaging.
 
 ## Source Map
@@ -142,23 +142,23 @@ The runtime implementations live outside this crate:
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): Rust/Python component boundaries,
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/ARCHITECTURE.md): Rust/Python component boundaries,
   invocation paths, and semantic authorities.
-- [`BINDINGS_AND_CONVERSIONS.md`](docs/BINDINGS_AND_CONVERSIONS.md): native
+- [`BINDINGS_AND_CONVERSIONS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/BINDINGS_AND_CONVERSIONS.md): native
   binding surface, bridge payloads, argument rules, and error mapping.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): package ownership, process boundaries,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/CONTRACTS.md): package ownership, process boundaries,
   invariants, and failure behavior.
-- [`MOUNTED_APPS.md`](docs/MOUNTED_APPS.md): Python application descriptors,
+- [`MOUNTED_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md): Python application descriptors,
   interpreter discovery, and stream discipline.
-- [`PACKAGING_AND_COMPATIBILITY.md`](docs/PACKAGING_AND_COMPATIBILITY.md):
+- [`PACKAGING_AND_COMPATIBILITY.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/PACKAGING_AND_COMPATIBILITY.md):
   wheel construction, entrypoint ownership, path precedence, and release
   verification.
-- [`RUNTIME_SELECTION.md`](docs/RUNTIME_SELECTION.md): native import policy,
+- [`RUNTIME_SELECTION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/RUNTIME_SELECTION.md): native import policy,
   subprocess resolution, timeout, failure classification, and parity rules.
 
 ## References
 
-- Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)
+- Package contracts: [`docs/CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/CONTRACTS.md)
 - Runtime crate: [`crates/bijux-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli)
 - DAG runtime crate: [`crates/bijux-dag-runtime`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime)
 - DAG executable crate: [`crates/bijux-dag-cli`](https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli)

@@ -82,26 +82,26 @@ place to read is usually `bijux-dag-app`.
 
 ## Representative Workflows
 
-- [Executable Examples](../../docs/bijux-dag/interfaces/runnable-examples.md)
+- [Executable Examples](https://bijux.io/bijux-core/bijux-dag/interfaces/runnable-examples/)
   maps the repository-backed hello, file-processing, cache, replay, failure,
   branch, and container proofs to their expected outputs.
-- [File Processing Workflow](../../docs/bijux-dag/operations/file-processing-workflow.md)
+- [File Processing Workflow](https://bijux.io/bijux-core/bijux-dag/operations/file-processing-workflow/)
   demonstrates a host-shell artifact workflow with replay and promotion.
-- [Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md)
+- [Cache Behavior Workflow](https://bijux.io/bijux-core/bijux-dag/operations/cache-behavior-workflow/)
   demonstrates stable cache verification, explicit-path cache-miss
   explanation, selective invalidation, and corruption refusal.
-- [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md)
+- [Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/)
   explains the retained identity surfaces behind cache verification, replay,
   export bundles, and artifact comparison.
-- [Data Pipeline Workflow](../../docs/bijux-dag/operations/data-pipeline-workflow.md)
+- [Data Pipeline Workflow](https://bijux.io/bijux-core/bijux-dag/operations/data-pipeline-workflow/)
   demonstrates retained-run comparison and changed-input attribution.
-- [Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md)
+- [Branching Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/branching-bulletin-workflow/)
   demonstrates retained branch decisions, skipped lanes, join-trigger evidence,
   and replay stability.
-- [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md)
+- [Compliance-Gated Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/compliance-gated-bulletin-workflow/)
   demonstrates transient retry evidence, focused replay repair, and strict
   verification after recovery.
-- [Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md)
+- [Container Packaging Workflow](https://bijux.io/bijux-core/bijux-dag/operations/container-packaging-workflow/)
   demonstrates mounted container inputs, retained outputs, and recorded image
   identity.
 
@@ -111,22 +111,22 @@ front-door examples for the public `bijux-dag` package.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): thin entrypoint flow, dependency
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/ARCHITECTURE.md): thin entrypoint flow, dependency
   boundary, ownership, panic containment, and change decisions.
-- [`COMPLETIONS_AND_COMMAND_SURFACE.md`](docs/COMPLETIONS_AND_COMMAND_SURFACE.md):
+- [`COMPLETIONS_AND_COMMAND_SURFACE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/COMPLETIONS_AND_COMMAND_SURFACE.md):
   app-owned command authority, supported shells, compatibility, and references.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): process ownership, thinness,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/CONTRACTS.md): process ownership, thinness,
   compatibility, failure, and verification contracts.
-- [`INSTALLED_BINARY_CONTRACT.md`](docs/INSTALLED_BINARY_CONTRACT.md):
+- [`INSTALLED_BINARY_CONTRACT.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/INSTALLED_BINARY_CONTRACT.md):
   executable identity, argv, streams, status, isolation, and release evidence.
-- [`PROCESS_AND_EXIT.md`](docs/PROCESS_AND_EXIT.md): parsing, dispatch status,
+- [`PROCESS_AND_EXIT.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/PROCESS_AND_EXIT.md): parsing, dispatch status,
   streams, exit classes, signals, and process testing.
-- [`TESTING_AND_RELEASE.md`](docs/TESTING_AND_RELEASE.md): test layers,
+- [`TESTING_AND_RELEASE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/TESTING_AND_RELEASE.md): test layers,
   isolation, release checks, and failure ownership.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-cli/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/)

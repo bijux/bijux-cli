@@ -92,26 +92,26 @@ that product promise coherent at the command and response boundary.
 For the repository-backed example that shows how the app surface reports a real
 cache verification and diagnostic sequence, including changed-input cache
 misses and corruption-based reuse refusal, use
-[Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md).
+[Cache Behavior Workflow](https://bijux.io/bijux-core/bijux-dag/operations/cache-behavior-workflow/).
 
 For the canonical explanation of which retained fingerprints and bundle modes
 those commands are actually reporting, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
+[Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/).
 
 For the repository-backed example that shows how the app surface reports a real
 container run, retained outputs, and a missing-engine infrastructure failure,
 use
-[Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md).
+[Container Packaging Workflow](https://bijux.io/bijux-core/bijux-dag/operations/container-packaging-workflow/).
 
 For the repository-backed example that shows how the app surface reports a real
 branch decision, a skipped lane, and replay stability at the publication
 boundary, use
-[Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md).
+[Branching Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/branching-bulletin-workflow/).
 
 For the repository-backed example that shows how the app surface separates root
 failure from propagated skips, replays only the failed approval boundary, and
 verifies the repaired run strictly, use
-[Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md).
+[Compliance-Gated Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/compliance-gated-bulletin-workflow/).
 
 Repository-owned schedule and backfill application flows are documented in the
 DAG handbook, but they remain internal workflow lanes rather than part of the
@@ -119,22 +119,22 @@ default public `v0.4.0` app story.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): request flow, source boundaries,
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/ARCHITECTURE.md): request flow, source boundaries,
   dependency direction, stable exports, and extension decisions.
-- [`COMMAND_ROUTING.md`](docs/COMMAND_ROUTING.md): command authority, surface
+- [`COMMAND_ROUTING.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/COMMAND_ROUTING.md): command authority, surface
   lanes, preconditions, paths, dispatch, and route verification.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): owned orchestration, input, output,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/CONTRACTS.md): owned orchestration, input, output,
   stability, dependency, and failure contracts.
-- [`RESPONSES_AND_FAILURES.md`](docs/RESPONSES_AND_FAILURES.md): typed
+- [`RESPONSES_AND_FAILURES.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/RESPONSES_AND_FAILURES.md): typed
   responses, JSON/human parity, failure classes, causality, and references.
-- [`ROUTE_AUTHORING.md`](docs/ROUTE_AUTHORING.md): command ownership, lane
+- [`ROUTE_AUTHORING.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/ROUTE_AUTHORING.md): command ownership, lane
   policy, dispatch, preconditions, response integrity, and route review.
-- [`WORKFLOWS_AND_SERVICES.md`](docs/WORKFLOWS_AND_SERVICES.md): graph, run,
+- [`WORKFLOWS_AND_SERVICES.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/WORKFLOWS_AND_SERVICES.md): graph, run,
   evidence, cache, replay, configuration, and service design.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-app/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)
