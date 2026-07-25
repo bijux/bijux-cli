@@ -9,20 +9,45 @@ last_reviewed: 2026-07-23
 
 # Bijux Core
 
+`bijux-core` is the release and verification workspace for the `bijux` command
+runtime and the local-first `bijux-dag` toolchain.
+
 <!-- bijux-core-badges:generated:start -->
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
-[![Docs](https://github.com/bijux/bijux-core/workflows/deploy-docs/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
+[![CI](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![Docs](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml?query=branch%3Amain)
+[![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
+[![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
+[![GHCR Publish](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml)
+[![GitHub Release](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
+[![GHCR packages](https://img.shields.io/badge/ghcr-6%20packages-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
+[![Public crates](https://img.shields.io/badge/public%20crates-6-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
+
+[![bijux-cli](https://img.shields.io/crates/v/bijux-cli?label=bijux--cli&logo=rust)](https://crates.io/crates/bijux-cli)
+[![bijux-dag-artifacts](https://img.shields.io/crates/v/bijux-dag-artifacts?label=artifacts&logo=rust)](https://crates.io/crates/bijux-dag-artifacts)
+[![bijux-dag-core](https://img.shields.io/crates/v/bijux-dag-core?label=core&logo=rust)](https://crates.io/crates/bijux-dag-core)
+[![bijux-dag-runtime](https://img.shields.io/crates/v/bijux-dag-runtime?label=runtime&logo=rust)](https://crates.io/crates/bijux-dag-runtime)
+[![bijux-dag-app](https://img.shields.io/crates/v/bijux-dag-app?label=app&logo=rust)](https://crates.io/crates/bijux-dag-app)
+[![bijux-dag-cli](https://img.shields.io/crates/v/bijux-dag-cli?label=bijux--dag&logo=rust)](https://crates.io/crates/bijux-dag-cli)
+[![bijux-cli](https://img.shields.io/pypi/v/bijux-cli?label=bijux--cli&logo=pypi)](https://pypi.org/project/bijux-cli/)
+
+[![bijux-cli](https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli)
+[![bijux-dag-artifacts](https://img.shields.io/badge/artifacts-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-artifacts)
+[![bijux-dag-core](https://img.shields.io/badge/core-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-core)
+[![bijux-dag-runtime](https://img.shields.io/badge/runtime-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-runtime)
+[![bijux-dag-app](https://img.shields.io/badge/app-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-app)
+[![bijux-dag-cli](https://img.shields.io/badge/bijux--dag-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-cli)
+
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/)
+[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/)
+[![bijux-dag-artifacts docs](https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)
+[![bijux-dag-core docs](https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)
+[![bijux-dag-runtime docs](https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)
+[![bijux-dag-app docs](https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)
+[![bijux-dag-cli docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/)
+[![bijux-cli-python docs](https://img.shields.io/badge/docs-bijux--cli--python-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli-python/)
 <!-- bijux-core-badges:generated:end -->
-
-`bijux-core` is the release and verification workspace for two public
-products:
-
-- `bijux`, the command runtime for mounted apps, plugins, layered config,
-  diagnostics, history, memory, and REPL workflows
-- `bijux-dag`, the local-first DAG toolchain for validated graphs, repeatable
-  execution, retained evidence, replay, comparison, and verification
 
 Both products make operational authority visible. `bijux` resolves a command
 to one owner and preserves streams and exit semantics. `bijux-dag` turns a
