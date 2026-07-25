@@ -31,7 +31,7 @@ fn dag_root_help_describes_release_boundary() {
     dag_command().write_long_help(&mut buffer).expect("render help");
     let rendered = String::from_utf8(buffer).expect("utf8 help");
 
-    assert!(rendered.contains("bijux-dag v0.4.0 is a local-first DAG runtime"));
+    assert!(rendered.contains("bijux-dag v0.4.1 is a local-first DAG runtime"));
     assert!(rendered.contains("explicit graph contracts, deterministic execution records,"));
     assert!(rendered.contains("verified artifacts, cache explanation, and replayable"));
     assert!(rendered.contains("run bundles"));
