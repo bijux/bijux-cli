@@ -419,6 +419,9 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 
 #[test]
 fn release_build_matrices_cover_cli_and_dag_release_families() {
+    let boundary = read_workspace_package_boundary();
+    let expected_public_crates = boundary.crates_io_publish_order;
+    let expected_public_crates_value = expected_public_crates.join(" ");
     let manifest_build_matrix =
         release_env_json_value_for_repo("bijux-core", "BIJUX_RELEASE_BUILD_MATRIX_JSON");
     let manifest_build_entries =
@@ -457,13 +460,25 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         .collect();
     assert_eq!(
         manifest_ghcr_slugs,
-        vec!["bijux-cli", "bijux-dag"],
-        "GHCR package matrix must publish both CLI and DAG release families"
+        expected_public_crates.iter().map(String::as_str).collect::<Vec<_>>(),
+        "GHCR package matrix must publish one container package for every public crate release"
     );
+    for entry in manifest_ghcr_matrix
+        .as_array()
+        .expect("GHCR package matrix should be an array")
+        .iter()
+        .filter(|entry| entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-")))
+    {
+        assert_eq!(
+            entry["artifact_name"].as_str(),
+            Some("bijux-dag-release"),
+            "DAG crate GHCR packages must publish from the shared DAG release bundle artifact"
+        );
+    }
     assert_eq!(
         release_env_value_for_repo("bijux-core", "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES"),
-        "bijux-cli bijux-dag",
-        "GHCR release configuration must explicitly allow the two public release families"
+        expected_public_crates_value,
+        "GHCR release configuration must explicitly allow the full public crate release set"
     );
 
     let release_env = read_repo_file(".github/release.env");
@@ -491,13 +506,25 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         .collect();
     assert_eq!(
         release_ghcr_slugs,
-        vec!["bijux-cli", "bijux-dag"],
-        ".github/release.env must publish both CLI and DAG release families to GHCR"
+        expected_public_crates.iter().map(String::as_str).collect::<Vec<_>>(),
+        ".github/release.env must publish one GHCR package for every public crate"
     );
+    for entry in release_ghcr_matrix
+        .as_array()
+        .expect("GHCR release assignment should be an array")
+        .iter()
+        .filter(|entry| entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-")))
+    {
+        assert_eq!(
+            entry["artifact_name"].as_str(),
+            Some("bijux-dag-release"),
+            ".github/release.env must map DAG crate GHCR packages to the shared DAG release bundle artifact"
+        );
+    }
     assert_eq!(
         shell_assignment_value(&release_env, "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES").as_deref(),
-        Some("bijux-cli bijux-dag"),
-        ".github/release.env must explicitly allow the CLI and DAG GHCR release families"
+        Some(expected_public_crates_value.as_str()),
+        ".github/release.env must explicitly allow the full public crate GHCR release set"
     );
 }
 
