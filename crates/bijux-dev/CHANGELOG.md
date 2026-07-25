@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
   crates.io packages and GHCR package slugs.
 - Added README public-link and Mermaid source checks to documentation
   verification.
+- Added the existing reusable documentation deployment workflow to the version
+  tag release coordinator.
 
 ### Changed
 

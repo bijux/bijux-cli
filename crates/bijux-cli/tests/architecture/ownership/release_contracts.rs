@@ -418,6 +418,31 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 }
 
 #[test]
+fn tag_release_coordinator_invokes_publication_and_docs_workflows() {
+    let workflow = read_repo_file(".github/workflows/release-on-tag.yml");
+    assert!(
+        workflow.contains("tags:\n      - \"v*\""),
+        "release-on-tag must remain restricted to version tags"
+    );
+    for reusable_workflow in [
+        "release-crates.yml",
+        "release-pypi.yml",
+        "release-ghcr.yml",
+        "release-github.yml",
+        "deploy-docs.yml",
+    ] {
+        assert!(
+            workflow.contains(&format!("uses: ./.github/workflows/{reusable_workflow}")),
+            "release-on-tag must invoke {reusable_workflow}"
+        );
+    }
+    assert!(
+        workflow.contains("pages: write"),
+        "release-on-tag must grant the reusable docs deployment workflow Pages access"
+    );
+}
+
+#[test]
 fn release_build_matrices_cover_cli_and_dag_release_families() {
     let boundary = read_workspace_package_boundary();
     let expected_public_crates = boundary.crates_io_publish_order;

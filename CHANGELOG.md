@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 ### Added
 - Added a corresponding GHCR package target for every public Rust crate, giving `bijux-cli` and each crate in the `bijux-dag` family an independently addressable container package.
 - Added documentation contracts that reject unsafe Mermaid identifiers and README links without canonical public destinations.
+- Added deployed documentation to the version-tag release coordinator alongside crates.io, PyPI, GHCR, and GitHub Release publication.
 
 ### Changed
 - Advanced the workspace and all package dependency constraints to the `v0.4.1` release line without rewriting the `v0.4.0` release record.

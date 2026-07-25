@@ -9,6 +9,7 @@ permissions:
   contents: write
   actions: read
   packages: write
+  pages: write
   id-token: write
 
 jobs:
@@ -39,3 +40,7 @@ jobs:
     with:
       release_tag: ${{ github.ref_name }}
     secrets: inherit
+
+  deploy-docs:
+    name: deploy-docs
+    uses: ./.github/workflows/deploy-docs.yml
