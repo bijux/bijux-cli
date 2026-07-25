@@ -492,7 +492,9 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         .as_array()
         .expect("GHCR package matrix should be an array")
         .iter()
-        .filter(|entry| entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-")))
+        .filter(|entry| {
+            entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-"))
+        })
     {
         assert_eq!(
             entry["artifact_name"].as_str(),
@@ -538,7 +540,9 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         .as_array()
         .expect("GHCR release assignment should be an array")
         .iter()
-        .filter(|entry| entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-")))
+        .filter(|entry| {
+            entry["package_slug"].as_str().is_some_and(|slug| slug.starts_with("bijux-dag-"))
+        })
     {
         assert_eq!(
             entry["artifact_name"].as_str(),
