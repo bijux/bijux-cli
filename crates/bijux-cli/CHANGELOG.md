@@ -11,6 +11,18 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-4-1"></a>
+
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-cli` to the `v0.4.1` workspace release line.
+- Standardized crate badges and replaced repository-relative README references with canonical GitHub and `bijux.io` destinations.
+- Incorporated the consolidated dependency lock updates, including the current `clap`, `libc`, and `serde_json` patch releases.
+
+### Fixed
+- Added the dedicated `bijux-cli` GHCR publication target so container and crates.io package identities remain aligned.
+
 <a id="v0-4-0"></a>
 
 ## 0.4.0 – 2026-07-24

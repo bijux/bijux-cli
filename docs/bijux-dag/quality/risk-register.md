@@ -30,7 +30,7 @@ flowchart LR
 
 - severity: `high`
 - affected component: local shell execution, `run`, `replay`, `--deny-network`, `--deny-clock`, `--clean-env`, and `--hermetic`
-- current status: `accepted-with-limitation` for `v0.4.0`; documentation and policy-surface tests exist, but local shell execution is still a host process boundary
+- current status: `accepted-with-limitation` for `v0.4.x`; documentation and policy-surface tests exist, but local shell execution is still a host process boundary
 - risk: operators may treat shell policy flags as full sandboxing even though DAG does not provide socket firewalls, clock virtualization, arbitrary filesystem-read sandboxing, or subprocess containment for the local shell backend
 - mitigation: keep policy semantics precise in operator docs, expose the effective policy surface through preflight and isolation reporting, and preserve contract coverage for denial behavior and hermetic wording
 - release decision: ship only with explicit limitation framing and no stronger sandbox claim than the local shell backend can enforce today

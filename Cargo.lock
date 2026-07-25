@@ -114,7 +114,7 @@ checksum = "b25655df2c3cdd83c5e5b293b88acd880332b2ddadd7c30ac43144fdc0033da9"
 
 [[package]]
 name = "bijux-cli"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-cli-python"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bijux-cli",
  "pyo3",
@@ -145,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-app"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64 0.23.0",
  "bijux-dag-artifacts",
@@ -164,7 +164,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-artifacts"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "hex",
  "serde",
@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-cli"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bijux-dag-app",
  "clap",
@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "criterion",
  "hex",
@@ -202,7 +202,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-runtime"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64 0.23.0",
  "bijux-dag-artifacts",
@@ -224,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dag-testkit"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bijux-dag-artifacts",
  "bijux-dag-core",
@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "bijux-dev"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "bijux-cli",

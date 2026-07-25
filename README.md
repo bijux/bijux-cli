@@ -95,9 +95,9 @@ A `bijux-dag` operation also retains graph, attempt, artifact, and integrity
 evidence because verification, comparison, and replay depend on more than
 console output.
 
-The current workspace release line is `0.4.0`.
+The current workspace release line is `0.4.1`.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
@@ -106,7 +106,7 @@ artifacts, cache explanation, and replayable run bundles.
 The machine-readable release authority is
 [`contracts/foundation/dag_release_truth_table.v1.json`](https://github.com/bijux/bijux-core/blob/main/contracts/foundation/dag_release_truth_table.v1.json).
 
-### `bijux-dag` v0.4.0 Surface Truth Table
+### `bijux-dag` v0.4.x Surface Truth Table
 
 | Class | Current boundary |
 | --- | --- |

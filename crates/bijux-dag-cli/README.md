@@ -13,7 +13,7 @@
 `bijux-dag-cli` installs the `bijux-dag` executable. It is the public command
 package for the DAG product.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate is the
 installed command surface for that promise.
@@ -31,7 +31,7 @@ crates yourself.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - installs the stable operator-facing `bijux-dag` binary
 - does not promote experimental, simulated, or internal namespaces into the
   default public contract

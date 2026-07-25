@@ -14,14 +14,14 @@
 runtime planning, scheduling, adapter invocation boundaries, policy checks,
 replay classification, cache behavior, and trace emission.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate is the
 runtime layer that executes, records, replays, and verifies that promise.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - execution-time layer for the local-first controller
 - stable local, Kubernetes Job, and shared-filesystem SLURM execution lanes
 - modeled remote-worker and generic scheduler contracts that remain outside

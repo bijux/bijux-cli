@@ -83,7 +83,7 @@ behavior where consumers rely on them.
 
 The DAG release line has additional retained-run and backend considerations in
 [DAG Release and Versioning](../../bijux-dag/operations/release-and-versioning.md)
-and the current [v0.4.0 Release Notes](../../bijux-dag/operations/v0-4-0-release-notes.md).
+and the [v0.4.0 baseline Release Notes](../../bijux-dag/operations/v0-4-0-release-notes.md).
 
 ## Publication Control Flow
 

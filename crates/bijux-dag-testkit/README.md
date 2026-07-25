@@ -6,7 +6,7 @@ assertion helpers shared across the DAG workspace.
 ## Release Status
 
 - repository-internal support crate
-- not part of the public `v0.4.0` crates.io release boundary
+- not part of the public `v0.4.1` crates.io release boundary
 - intended for workspace crates and top-level suites
 
 ## Good Fit

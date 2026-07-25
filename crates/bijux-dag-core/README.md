@@ -14,14 +14,14 @@
 It handles graph truth: parsing, validation, canonicalization, topology,
 identity, reference resolution, and planner lowering.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate provides
 the explicit graph-contract half of that product promise.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - pure kernel layer for DAG authoring, validation, and identity work
 
 ## What It Provides
@@ -101,7 +101,7 @@ deterministic execution surfaces, use
 
 Repository-owned schedule and backfill authoring examples also live under
 `evidence/dag/authoring/examples/`, but they remain internal workflow lanes
-rather than part of the default public `v0.4.0` package story.
+rather than part of the default public `v0.4.x` package story.
 
 ## Internal Documentation
 

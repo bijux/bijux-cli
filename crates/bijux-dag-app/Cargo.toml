@@ -24,9 +24,9 @@ experimental-public-api = []
 clap = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
-"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.0" }
-"bijux-dag-runtime" = { path = "../bijux-dag-runtime", version = "0.4.0" }
-"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.0" }
+"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.1" }
+"bijux-dag-runtime" = { path = "../bijux-dag-runtime", version = "0.4.1" }
+"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.1" }
 thiserror = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }

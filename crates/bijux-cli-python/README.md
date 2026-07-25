@@ -28,7 +28,7 @@ bijux doctor
 python -m bijux_cli_py --help
 ```
 
-The package is on the `v0.4.0` release line and requires Python 3.11 or newer.
+The package is on the `v0.4.1` release line and requires Python 3.11 or newer.
 The `bijux` console entrypoint and `python -m bijux_cli_py` resolve the same
 runtime contract.
 

@@ -14,14 +14,14 @@
 surface. It translates command intent into calls across the DAG crates, applies
 release-boundary routing, and shapes the typed responses that the CLI renders.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate keeps
 that product promise coherent at the command and response boundary.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - owns the command application layer, not the thin binary wrapper
 - contains repository-owned experimental and opt-in routes, but those routes
   are not automatically part of the stable operator contract
@@ -115,7 +115,7 @@ verifies the repaired run strictly, use
 
 Repository-owned schedule and backfill application flows are documented in the
 DAG handbook, but they remain internal workflow lanes rather than part of the
-default public `v0.4.0` app story.
+default public `v0.4.x` app story.
 
 ## Internal Documentation
 
