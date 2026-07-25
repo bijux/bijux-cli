@@ -54,7 +54,7 @@ const RUN_PROGRESS_HELP: &str =
 const EXECUTION_BACKEND_HELP: &str =
     "choose the node execution backend; `kubernetes` runs container nodes as Kubernetes Jobs through kubectl plus a shared persistent volume claim, and `slurm` submits nodes through sbatch and polls sacct until each job reaches a terminal state";
 const DAG_PRODUCT_SENTENCE: &str =
-    "bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.";
+    "bijux-dag v0.4.1 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.";
 const ROOT_HELP_BOUNDARY_HELP: &str =
     "v0.4.0 surface truth table:\n  stable: validate, plan, run, replay, runs ..., artifact, artifact-inspect, diff, explain, verify, doctor, cache, version, commands\n  experimental: hidden explicit-path routes require deliberate inventory with `bijux-dag commands --lane experimental`\n  simulated: modeled platform namespaces require `bijux-dag commands --lane simulated` to inventory and BIJUX_DAG_ENABLE_SIMULATED=1 to execute\n  internal: maintainer namespaces require `bijux-dag commands --lane internal` to inventory and BIJUX_DAG_ENABLE_INTERNAL=1 to execute\n  future: generic hpc beyond the shared-filesystem slurm lane, public remote workers, and public scheduler services are not part of v0.4.0\n\nUse `bijux-dag commands` for the stable operator surface and add `--lane` only when you intentionally need repository-owned non-stable routes.";
 

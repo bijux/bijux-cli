@@ -8,7 +8,7 @@ last_reviewed: 2026-07-23
 
 # DAG Packages
 
-bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+bijux-dag v0.4.1 is a local-first DAG runtime for reproducible workflows with
 explicit graph contracts, deterministic execution records, verified artifacts,
 cache explanation, and replayable run bundles.
 Replay claims on this page are governed by the

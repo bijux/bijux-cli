@@ -151,7 +151,7 @@ fn dag_release_boundary_docs_and_examples_stay_honest() {
     assert_contains_all(
         &readme,
         &[
-            "### `bijux-dag` v0.4.0 Surface Truth Table",
+            "### `bijux-dag` v0.4.x Surface Truth Table",
             "contracts/foundation/dag_release_truth_table.v1.json",
             "BIJUX_DAG_ENABLE_SIMULATED=1",
             "BIJUX_DAG_ENABLE_INTERNAL=1",

@@ -19,7 +19,7 @@ last_reviewed: 2026-07-23
 [![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/) [![bijux-dag-cli docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/)
 <!-- bijux-core-badges:generated:end -->
 
-bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with
+bijux-dag v0.4.1 is a local-first DAG runtime for reproducible workflows with
 explicit graph contracts, deterministic execution records, verified artifacts,
 cache explanation, and replayable run bundles.
 Replay claims on this page are governed by the

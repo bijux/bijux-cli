@@ -22,6 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 ### Changed
 - Advanced the workspace and all package dependency constraints to the `v0.4.1` release line without rewriting the `v0.4.0` release record.
+- Aligned the canonical DAG product sentence and new plugin scaffold host floor with `v0.4.1` while preserving the `v0.4.0` compatibility boundary and release notes.
 - Standardized the repository and package badge surfaces around four stable rows for repository health, registries, GHCR packages, and deployed documentation.
 - Updated the release-validation Python action and consolidated the pending `base64`, `clap`, `libc`, and `serde_json` dependency updates.
 - Aligned the managed PyPI workflow with trusted publishing for the maturin lane, retaining token bootstrap only for a confirmed missing project.
