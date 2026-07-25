@@ -17,7 +17,7 @@ responsibility.
 flowchart LR
     question["DAG product question"]
     boundary{"Which boundary owns it?"}
-    graph["dag-core graph meaning"]
+    graph_kernel["dag-core graph meaning"]
     run["dag-runtime execution and replay"]
     evidence["dag-artifacts evidence"]
     app["dag-app orchestration"]
@@ -26,7 +26,7 @@ flowchart LR
     authority["Open the owning contract"]
 
     question --> boundary
-    boundary --> graph --> authority
+    boundary --> graph_kernel --> authority
     boundary --> run --> authority
     boundary --> evidence --> authority
     boundary --> app --> authority

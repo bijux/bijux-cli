@@ -44,13 +44,13 @@ inventory.
 ```mermaid
 flowchart LR
     source["Workflow source"]
-    graph["Validated canonical graph"]
+    canonical_graph["Validated canonical graph"]
     plan["Deterministic execution plan"]
     run["Backend execution"]
     evidence["Retained run evidence"]
     inspect["Verify, explain, diff, or replay"]
 
-    source --> graph --> plan --> run --> evidence --> inspect
+    source --> canonical_graph --> plan --> run --> evidence --> inspect
     evidence -. replay input .-> plan
 ```
 
@@ -76,7 +76,7 @@ This acceptance chain is why a process exit code alone is not a DAG result.
 
 ```mermaid
 flowchart TB
-    graph["validated graph and policy"]
+    graph_policy["validated graph and policy"]
     controller["bijux-dag controller"]
     schedule["ready frontier and resource admission"]
     backend["local, container, SLURM, or Kubernetes substrate"]
@@ -84,7 +84,7 @@ flowchart TB
     acceptance["lifecycle, output, and integrity acceptance"]
     run["retained run truth"]
 
-    graph --> controller --> schedule --> backend --> observation --> acceptance --> run
+    graph_policy --> controller --> schedule --> backend --> observation --> acceptance --> run
     acceptance -->|"retry or refuse"| schedule
 ```
 

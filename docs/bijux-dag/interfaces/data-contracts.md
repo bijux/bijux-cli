@@ -36,7 +36,7 @@ copying every schema field.
 
 ```mermaid
 flowchart LR
-    graph["authored graph"] --> validation["validated graph"]
+    graph_source["authored graph"] --> validation["validated graph"]
     validation --> plan["execution plan"]
     plan --> run["run evidence"]
     run --> artifact["artifact evidence"]
