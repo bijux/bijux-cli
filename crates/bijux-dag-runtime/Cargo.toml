@@ -21,8 +21,8 @@ default = []
 experimental-public-api = ["bijux-dag-core/experimental-public-api"]
 
 [dependencies]
-"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.0" }
-"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.0" }
+"bijux-dag-core" = { path = "../bijux-dag-core", version = "0.4.1" }
+"bijux-dag-artifacts" = { path = "../bijux-dag-artifacts", version = "0.4.1" }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
 croner = { workspace = true }

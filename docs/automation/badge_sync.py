@@ -125,6 +125,7 @@ def package_records() -> dict[str, PackageRecord]:
             purpose="Artifact identity, storage layout, retention, integrity, and lineage helpers for retained DAG run evidence.",
             docs_section="bijux-dag-artifacts",
             source_dir="bijux-dag-artifacts",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-artifacts",
         ),
         "bijux-dag-core": rust_record(
             key="bijux-dag-core",
@@ -133,6 +134,7 @@ def package_records() -> dict[str, PackageRecord]:
             purpose="Deterministic graph kernel for parsing, validation, canonicalization, planning, and semantic identity.",
             docs_section="bijux-dag-core",
             source_dir="bijux-dag-core",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-core",
         ),
         "bijux-dag-runtime": rust_record(
             key="bijux-dag-runtime",
@@ -141,6 +143,7 @@ def package_records() -> dict[str, PackageRecord]:
             purpose="Execution engine and replay policy layer for DAG runs, cache decisions, and retained runtime diagnostics.",
             docs_section="bijux-dag-runtime",
             source_dir="bijux-dag-runtime",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-runtime",
         ),
         "bijux-dag-app": rust_record(
             key="bijux-dag-app",
@@ -149,6 +152,7 @@ def package_records() -> dict[str, PackageRecord]:
             purpose="Application orchestration and response-shaping layer that turns DAG runtime behavior into user-facing workflows.",
             docs_section="bijux-dag-app",
             source_dir="bijux-dag-app",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-app",
         ),
         "bijux-dag-cli": rust_record(
             key="bijux-dag-cli",
@@ -157,7 +161,7 @@ def package_records() -> dict[str, PackageRecord]:
             purpose="Installable `bijux-dag` command package for validating, running, replaying, and inspecting DAG workflows.",
             docs_section="bijux-dag-cli",
             source_dir="bijux-dag-cli",
-            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag",
+            ghcr_url="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-cli",
         ),
         "bijux-cli-python": PackageRecord(
             key="bijux-cli-python",
@@ -220,8 +224,44 @@ def _record_context(record: PackageRecord) -> dict[str, str]:
 def render_repository_badges(
     catalog: dict[str, str], records: tuple[PackageRecord, ...]
 ) -> str:
-    del records
-    return catalog["repository-summary"]
+    public_rust_records = tuple(
+        record for record in records if record.published and record.kind == "rust"
+    )
+    pypi_records = tuple(record for record in records if record.pypi_url)
+    ghcr_records = tuple(record for record in records if record.ghcr_url)
+    docs_records = tuple(record for record in records if record.docs_url)
+    summary = _render_template(
+        catalog["repository-summary"],
+        {
+            "ghcr_package_count": str(len(ghcr_records)),
+            "public_crate_count": str(len(public_rust_records)),
+        },
+    )
+    registry_badges = [
+        _render_template(catalog["family-crates-badge"], _record_context(record))
+        for record in public_rust_records
+    ]
+    registry_badges.extend(
+        _render_template(catalog["family-pypi-badge"], _record_context(record))
+        for record in pypi_records
+    )
+    ghcr_badges = [
+        _render_template(catalog["family-ghcr-badge"], _record_context(record))
+        for record in ghcr_records
+    ]
+    docs_badges = [catalog["repository-docs-badge"]]
+    docs_badges.extend(
+        _render_template(catalog["family-docs-badge"], _record_context(record))
+        for record in docs_records
+    )
+    return "\n\n".join(
+        (
+            summary,
+            "\n".join(registry_badges),
+            "\n".join(ghcr_badges),
+            "\n".join(docs_badges),
+        )
+    )
 
 
 def render_package_badges(

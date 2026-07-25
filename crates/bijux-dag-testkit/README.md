@@ -6,7 +6,7 @@ assertion helpers shared across the DAG workspace.
 ## Release Status
 
 - repository-internal support crate
-- not part of the public `v0.4.0` crates.io release boundary
+- not part of the public `v0.4.1` crates.io release boundary
 - intended for workspace crates and top-level suites
 
 ## Good Fit
@@ -43,22 +43,22 @@ assertions without duplicating fixtures across crates.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): private test-support boundaries,
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/ARCHITECTURE.md): private test-support boundaries,
   dependency direction, determinism, and extension decisions.
-- [`ASSERTIONS_AND_HARNESSES.md`](docs/ASSERTIONS_AND_HARNESSES.md): semantic
+- [`ASSERTIONS_AND_HARNESSES.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/ASSERTIONS_AND_HARNESSES.md): semantic
   normalization, trace laws, command isolation, and corruption builders.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): fixture, fake, assertion, dependency,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/CONTRACTS.md): fixture, fake, assertion, dependency,
   publication, and change contracts.
-- [`FAKES_AND_SCENARIOS.md`](docs/FAKES_AND_SCENARIOS.md): adapter fakes,
+- [`FAKES_AND_SCENARIOS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/FAKES_AND_SCENARIOS.md): adapter fakes,
   deterministic outcomes, product scenario reports, and fault design.
-- [`FIXTURES_AND_BUILDERS.md`](docs/FIXTURES_AND_BUILDERS.md): graph builders,
+- [`FIXTURES_AND_BUILDERS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/FIXTURES_AND_BUILDERS.md): graph builders,
   repository assets, synthetic/evidence distinction, and snapshots.
-- [`HERMETIC_TESTS.md`](docs/HERMETIC_TESTS.md): per-test resource ownership,
+- [`HERMETIC_TESTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/HERMETIC_TESTS.md): per-test resource ownership,
   process and environment isolation, golden updates, and narrow serialization.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-testkit/)

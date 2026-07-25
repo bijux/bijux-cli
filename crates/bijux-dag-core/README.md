@@ -4,24 +4,24 @@
 [![Crates.io](https://img.shields.io/crates/v/bijux-dag-core?label=crates.io&logo=rust)](https://crates.io/crates/bijux-dag-core)
 [![Rust docs](https://img.shields.io/badge/rust--docs-core-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-core)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 
-[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-core docs](https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/) [![bijux-dag-core docs](https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-dag-core` is the deterministic graph kernel behind `bijux-dag`.
 It handles graph truth: parsing, validation, canonicalization, topology,
 identity, reference resolution, and planner lowering.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate provides
 the explicit graph-contract half of that product promise.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - pure kernel layer for DAG authoring, validation, and identity work
 
 ## What It Provides
@@ -84,44 +84,44 @@ or command-layer concerns.
 
 For the repository-backed authoring example that binds a graph-owned label into
 a real container command surface, use
-[`evidence/dag/authoring/examples/release-note-bundle.dag.json`](../../evidence/dag/authoring/examples/release-note-bundle.dag.json).
+[`evidence/dag/authoring/examples/release-note-bundle.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/release-note-bundle.dag.json).
 
 For the repository-backed authoring example that binds a graph-owned enum input
 into a real branch decision surface, use
-[`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](../../evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
+[`evidence/dag/authoring/examples/audience-branch-bulletin.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/audience-branch-bulletin.dag.json).
 
 For the repository-backed authoring example that binds graph-owned path inputs
 into a retryable compliance gate and a repairable publication boundary, use
-[`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](../../evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
+[`evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json`](https://github.com/bijux/bijux-core/blob/main/evidence/dag/authoring/examples/compliance-gated-bulletin.dag.json).
 
 For the operator-facing explanation of how graph identity relates to plan,
 execution, cache, and replay identity after this crate lowers a graph into
 deterministic execution surfaces, use
-[Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md).
+[Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/).
 
 Repository-owned schedule and backfill authoring examples also live under
 `evidence/dag/authoring/examples/`, but they remain internal workflow lanes
-rather than part of the default public `v0.4.0` package story.
+rather than part of the default public `v0.4.x` package story.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): pure-kernel data flow, source
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/ARCHITECTURE.md): pure-kernel data flow, source
   boundaries, dependency direction, and extension decisions.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): owned graph semantics, purity,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/CONTRACTS.md): owned graph semantics, purity,
   validation, identity, and stability contracts.
-- [`GRAPH_MODEL.md`](docs/GRAPH_MODEL.md): graph, node, reference, output,
+- [`GRAPH_MODEL.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/GRAPH_MODEL.md): graph, node, reference, output,
   edge, trigger, composition, and expansion model.
-- [`IDENTITY_AND_VALIDATION.md`](docs/IDENTITY_AND_VALIDATION.md): strict
+- [`IDENTITY_AND_VALIDATION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/IDENTITY_AND_VALIDATION.md): strict
   parsing, diagnostics, canonicalization, fingerprints, and compatibility.
-- [`PLANNING_AND_PUBLIC_API.md`](docs/PLANNING_AND_PUBLIC_API.md): planner
+- [`PLANNING_AND_PUBLIC_API.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/PLANNING_AND_PUBLIC_API.md): planner
   lowering, compile helpers, stable exports, and runtime handoff.
-- [`SERIALIZATION_AND_EVOLUTION.md`](docs/SERIALIZATION_AND_EVOLUTION.md):
+- [`SERIALIZATION_AND_EVOLUTION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/SERIALIZATION_AND_EVOLUTION.md):
   strict input shape, version ownership, canonical compatibility, identity,
   and schema-change procedure.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-core/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)

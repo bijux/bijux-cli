@@ -4,10 +4,10 @@
 [![Crates.io](https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust)](https://crates.io/crates/bijux-cli)
 [![Rust docs](https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-cli)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 
-[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/)
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/) [![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/)
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-cli` is the public Rust package behind the `bijux` command runtime.
@@ -87,17 +87,17 @@ let mount = ProductMount::new("hello")?
 ```
 
 Python-mounted apps use the same descriptor contract. See the
-[mounted Python app guide](../bijux-cli-python/docs/MOUNTED_APPS.md) for interpreter discovery,
+[mounted Python app guide](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/MOUNTED_APPS.md) for interpreter discovery,
 manifest placement, compatibility checks, and packaging.
 
 ## Operator References
 
 | Question | Authority |
 | --- | --- |
-| which commands and output contracts are supported? | [CLI Surface](../../docs/bijux-cli/interfaces/cli-surface.md) |
-| how are global, profile, project, and environment values resolved? | [Configuration Surface](../../docs/bijux-cli/interfaces/configuration-surface.md) |
-| how do I diagnose paths, routing, plugins, Python, or mounted apps? | [Diagnostics Guide](../../docs/bijux-cli/operations/diagnostics-guide.md) |
-| which generated keys and scopes exist? | [Generated Configuration Reference](../../docs/bijux-cli/interfaces/generated-config-reference.md) |
+| which commands and output contracts are supported? | [CLI Surface](https://bijux.io/bijux-core/bijux-cli/interfaces/cli-surface/) |
+| how are global, profile, project, and environment values resolved? | [Configuration Surface](https://bijux.io/bijux-core/bijux-cli/interfaces/configuration-surface/) |
+| how do I diagnose paths, routing, plugins, Python, or mounted apps? | [Diagnostics Guide](https://bijux.io/bijux-core/bijux-cli/operations/diagnostics-guide/) |
+| which generated keys and scopes exist? | [Generated Configuration Reference](https://bijux.io/bijux-core/bijux-cli/interfaces/generated-config-reference/) |
 
 ## Tests
 
@@ -108,22 +108,22 @@ manifest placement, compatibility checks, and packaging.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): runtime layers, dependency
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/ARCHITECTURE.md): runtime layers, dependency
   direction, state ownership, and extension decisions.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): package ownership, invariants, schemas,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/CONTRACTS.md): package ownership, invariants, schemas,
   effects, and failure behavior.
-- [`PUBLIC_API.md`](docs/PUBLIC_API.md): supported Rust facade, contract types,
+- [`PUBLIC_API.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/PUBLIC_API.md): supported Rust facade, contract types,
   SDK surface, and compatibility rules.
-- [`PLUGINS_AND_APPS.md`](docs/PLUGINS_AND_APPS.md): extension ownership,
+- [`PLUGINS_AND_APPS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/PLUGINS_AND_APPS.md): extension ownership,
   namespace collision law, lifecycle, execution, and trust boundaries.
-- [`ROUTING_AND_EXECUTION.md`](docs/ROUTING_AND_EXECUTION.md): canonical route
+- [`ROUTING_AND_EXECUTION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/ROUTING_AND_EXECUTION.md): canonical route
   resolution, execution policy, lifecycle, and external dispatch.
-- [`STATE_AND_EFFECTS.md`](docs/STATE_AND_EFFECTS.md): configuration, durable
+- [`STATE_AND_EFFECTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/STATE_AND_EFFECTS.md): configuration, durable
   state, subprocess, stream, locking, and recovery rules.
 
 ## Release References
 
-- Package contracts: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)
+- Package contracts: [`docs/CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/docs/CONTRACTS.md)
 - Repository handbook: [CLI handbook](https://bijux.io/bijux-core/bijux-cli/)
 - Crate changelog: [`crates/bijux-cli/CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli/CHANGELOG.md)
 - Root release log: [`CHANGELOG.md`](https://github.com/bijux/bijux-core/blob/main/CHANGELOG.md)

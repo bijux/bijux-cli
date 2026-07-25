@@ -23,12 +23,12 @@ boundary before choosing a command or package.
 ```mermaid
 flowchart LR
     Definition["Workflow definition"]
-    Graph["Validated graph<br/>canonical identity and plan"]
+    validated_graph["Validated graph<br/>canonical identity and plan"]
     Runtime["Bounded execution<br/>local, Kubernetes, or SLURM"]
     Evidence["Retained evidence<br/>run, artifact, trace, and cache records"]
     Decision["Operator decision<br/>inspect, replay, diff, or verify"]
 
-    Definition --> Graph --> Runtime --> Evidence --> Decision
+    Definition --> validated_graph --> Runtime --> Evidence --> Decision
 
     External["External authority<br/>cluster policy, identity, secrets,<br/>compliance, and fleet control"]
     External -. constrains .-> Runtime

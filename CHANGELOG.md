@@ -11,6 +11,28 @@ This project adheres to [Semantic Versioning](https://semver.org) and the
 
 <!-- towncrier start -->
 
+<a id="v0-4-1"></a>
+
+## 0.4.1 – 2026-07-25
+
+### Added
+- Added a corresponding GHCR package target for every public Rust crate, giving `bijux-cli` and each crate in the `bijux-dag` family an independently addressable container package.
+- Added documentation contracts that reject unsafe Mermaid identifiers and README links without canonical public destinations.
+- Added deployed documentation to the version-tag release coordinator alongside crates.io, PyPI, GHCR, and GitHub Release publication.
+
+### Changed
+- Advanced the workspace and all package dependency constraints to the `v0.4.1` release line without rewriting the `v0.4.0` release record.
+- Aligned the canonical DAG product sentence and new plugin scaffold host floor with `v0.4.1` while preserving the `v0.4.0` compatibility boundary and release notes.
+- Standardized the repository and package badge surfaces around four stable rows for repository health, registries, GHCR packages, and deployed documentation.
+- Updated the release-validation Python action and consolidated the pending `base64`, `clap`, `libc`, and `serde_json` dependency updates.
+- Aligned the managed PyPI workflow with trusted publishing for the maturin lane, retaining token bootstrap only for a confirmed missing project.
+
+### Fixed
+- Corrected the GHCR release matrix so its six package slugs exactly match the six crates.io publication targets.
+- Corrected repository CI and package badge links so they resolve to the owning GitHub workflow, registry package, or deployed `bijux.io` page.
+- Replaced repository-relative README hyperlinks with stable GitHub source links or deployed documentation routes.
+- Corrected Mermaid node identifiers that prevented DAG diagrams from rendering on the public site.
+
 <a id="v0-4-0"></a>
 
 ## 0.4.0 – 2026-07-24

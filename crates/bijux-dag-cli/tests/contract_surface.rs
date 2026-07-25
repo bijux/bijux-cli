@@ -433,7 +433,7 @@ fn dag_root_help_lists_top_level_commands() {
     assert!(text.contains("validate"));
     assert!(text.contains("run"));
     assert!(text.contains("completions"));
-    assert!(text.contains("bijux-dag v0.4.0 is a local-first DAG runtime"));
+    assert!(text.contains("bijux-dag v0.4.1 is a local-first DAG runtime"));
     assert!(text.contains("explicit graph contracts, deterministic execution records,"));
     assert!(text.contains("verified artifacts, cache explanation, and replayable"));
     assert!(text.contains("run bundles"));

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-const DAG_PRODUCT_SENTENCE: &str = "bijux-dag v0.4.0 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.";
+const DAG_PRODUCT_SENTENCE: &str = "bijux-dag v0.4.1 is a local-first DAG runtime for reproducible workflows with explicit graph contracts, deterministic execution records, verified artifacts, cache explanation, and replayable run bundles.";
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

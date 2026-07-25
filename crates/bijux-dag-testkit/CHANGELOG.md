@@ -4,6 +4,17 @@ All notable changes to **bijux-dag-testkit** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced the internal testkit and its workspace dependency constraints to
+  the `v0.4.1` release line.
+- Canonicalized README links to fixture contracts, harness guidance, and
+  repository-owned package documentation.
+
+The crate remains repository-internal and is not a crates.io or GHCR release
+target.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

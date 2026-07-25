@@ -40,9 +40,15 @@ repeat links for sibling packages.
 
 <!-- bijux-core-badges:repository-summary:start -->
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
-[![Docs](https://github.com/bijux/bijux-core/workflows/deploy-docs/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
+[![CI](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![Docs](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml?query=branch%3Amain)
+[![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
+[![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
+[![GHCR Publish](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml)
+[![GitHub Release](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
+[![GHCR packages](https://img.shields.io/badge/ghcr-{{ ghcr_package_count }}%20packages-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
+[![Public crates](https://img.shields.io/badge/public%20crates-{{ public_crate_count }}-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
 <!-- bijux-core-badges:repository-summary:end -->
 
 ## Rust Package Summary
@@ -51,7 +57,7 @@ repeat links for sibling packages.
 [![Crates.io](https://img.shields.io/crates/v/{{ crate_name }}?label=crates.io&logo=rust)]({{ crates_url }})
 [![Rust docs](https://img.shields.io/badge/rust--docs-{{ crate_badge_label }}-DEA584?logo=rust&logoColor=white)]({{ docsrs_url }})
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 <!-- bijux-core-badges:rust-package-summary:end -->
 
@@ -61,7 +67,7 @@ repeat links for sibling packages.
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)]({{ pypi_url }})
 [![PyPI](https://img.shields.io/pypi/v/{{ pypi_name }}?label=PyPI&logo=pypi)]({{ pypi_url }})
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 <!-- bijux-core-badges:python-package-summary:end -->
 
@@ -98,5 +104,5 @@ repeat links for sibling packages.
 ## Repository Docs Badge
 
 <!-- bijux-core-badges:repository-docs-badge:start -->
-[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/)
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/)
 <!-- bijux-core-badges:repository-docs-badge:end -->

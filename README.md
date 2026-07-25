@@ -2,9 +2,39 @@
 
 <!-- bijux-core-badges:generated:start -->
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
-[![Docs](https://github.com/bijux/bijux-core/workflows/deploy-docs/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml)
+[![CI](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![Docs](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/deploy-docs.yml?query=branch%3Amain)
+[![Crates Publish](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-crates.yml)
+[![PyPI Publish](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-pypi.yml)
+[![GHCR Publish](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-ghcr.yml)
+[![GitHub Release](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/release-github.yml)
 [![Release](https://img.shields.io/github/v/release/bijux/bijux-core?display_name=tag&label=release)](https://github.com/bijux/bijux-core/releases)
+[![GHCR packages](https://img.shields.io/badge/ghcr-6%20packages-181717?logo=github)](https://github.com/bijux?tab=packages&repo_name=bijux-core)
+[![Public crates](https://img.shields.io/badge/public%20crates-6-2563EB)](https://github.com/bijux/bijux-core/tree/main/crates)
+
+[![bijux-cli](https://img.shields.io/crates/v/bijux-cli?label=bijux--cli&logo=rust)](https://crates.io/crates/bijux-cli)
+[![bijux-dag-artifacts](https://img.shields.io/crates/v/bijux-dag-artifacts?label=artifacts&logo=rust)](https://crates.io/crates/bijux-dag-artifacts)
+[![bijux-dag-core](https://img.shields.io/crates/v/bijux-dag-core?label=core&logo=rust)](https://crates.io/crates/bijux-dag-core)
+[![bijux-dag-runtime](https://img.shields.io/crates/v/bijux-dag-runtime?label=runtime&logo=rust)](https://crates.io/crates/bijux-dag-runtime)
+[![bijux-dag-app](https://img.shields.io/crates/v/bijux-dag-app?label=app&logo=rust)](https://crates.io/crates/bijux-dag-app)
+[![bijux-dag-cli](https://img.shields.io/crates/v/bijux-dag-cli?label=bijux--dag&logo=rust)](https://crates.io/crates/bijux-dag-cli)
+[![bijux-cli](https://img.shields.io/pypi/v/bijux-cli?label=bijux--cli&logo=pypi)](https://pypi.org/project/bijux-cli/)
+
+[![bijux-cli](https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli)
+[![bijux-dag-artifacts](https://img.shields.io/badge/artifacts-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-artifacts)
+[![bijux-dag-core](https://img.shields.io/badge/core-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-core)
+[![bijux-dag-runtime](https://img.shields.io/badge/runtime-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-runtime)
+[![bijux-dag-app](https://img.shields.io/badge/app-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-app)
+[![bijux-dag-cli](https://img.shields.io/badge/bijux--dag-ghcr-181717?logo=github)](https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-cli)
+
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/)
+[![bijux-cli docs](https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/)
+[![bijux-dag-artifacts docs](https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/)
+[![bijux-dag-core docs](https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/)
+[![bijux-dag-runtime docs](https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)
+[![bijux-dag-app docs](https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/)
+[![bijux-dag-cli docs](https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/)
+[![bijux-cli-python docs](https://img.shields.io/badge/docs-bijux--cli--python-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli-python/)
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-core` ships two command-line products for operations that must remain
@@ -65,18 +95,18 @@ A `bijux-dag` operation also retains graph, attempt, artifact, and integrity
 evidence because verification, comparison, and replay depend on more than
 console output.
 
-The current workspace release line is `0.4.0`.
+The current workspace release line is `0.4.1`.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles.
 
 ## DAG Release Boundary
 
 The machine-readable release authority is
-[`contracts/foundation/dag_release_truth_table.v1.json`](contracts/foundation/dag_release_truth_table.v1.json).
+[`contracts/foundation/dag_release_truth_table.v1.json`](https://github.com/bijux/bijux-core/blob/main/contracts/foundation/dag_release_truth_table.v1.json).
 
-### `bijux-dag` v0.4.0 Surface Truth Table
+### `bijux-dag` v0.4.x Surface Truth Table
 
 | Class | Current boundary |
 | --- | --- |
@@ -86,9 +116,9 @@ The machine-readable release authority is
 | internal | maintainer routes inventoried with `commands --lane internal` and gated by `BIJUX_DAG_ENABLE_INTERNAL=1` |
 | unreleased | generic HPC, public remote workers, scheduler services, and public enterprise or federation APIs |
 
-Use the [Release Boundary](docs/bijux-dag/foundation/release-boundary.md) for
-operator decisions, the [v0.4.0 Release Notes](docs/bijux-dag/operations/v0-4-0-release-notes.md)
-for the shipped release, and [Future Direction](docs/bijux-dag/foundation/future-direction.md)
+Use the [Release Boundary](https://bijux.io/bijux-core/bijux-dag/foundation/release-boundary/) for
+operator decisions, the [v0.4.0 Release Notes](https://bijux.io/bijux-core/bijux-dag/operations/v0-4-0-release-notes/)
+for the shipped release, and [Future Direction](https://bijux.io/bijux-core/bijux-dag/foundation/future-direction/)
 only for capability promotion criteria beyond the current contract.
 
 ## Install And Verify
@@ -110,7 +140,7 @@ bijux-dag commands
 The PyPI package is an alternative distribution of `bijux`; it does not install
 `bijux-dag`. The Python DAG helpers invoke an independently installed
 `bijux-dag` process and do not embed the runtime. See the
-[Python package boundary](crates/bijux-cli-python/README.md) before depending
+[Python package boundary](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/README.md) before depending
 on that process client.
 
 The first commands establish different facts:
@@ -124,7 +154,7 @@ The first commands establish different facts:
 
 None of these commands proves an optional backend is available. Container,
 SLURM, and Kubernetes execution each have additional environment contracts in
-the [DAG operations handbook](docs/bijux-dag/operations/index.md).
+the [DAG operations handbook](https://bijux.io/bijux-core/bijux-dag/operations/).
 
 ## Get A Useful Result
 
@@ -190,7 +220,7 @@ make dag-demo
 
 The demonstration writes beneath `artifacts/dag-demo/`; it does not modify
 product source or turn local output into checked-in evidence. Follow the
-[first-run tutorial](docs/bijux-dag/operations/first-run-tutorial.md) for the
+[first-run tutorial](https://bijux.io/bijux-core/bijux-dag/operations/first-run-tutorial/) for the
 commands that inspect the resulting run directory and verify its artifacts.
 
 ## Operational Trust Boundaries
@@ -203,9 +233,9 @@ commands that inspect the resulting run directory and verify its artifacts.
 | execution backends | local, container, shared-filesystem SLURM, and Kubernetes Job lanes have explicit contracts | backend selection does not create isolation or infrastructure that the host does not provide |
 | performance | named scenarios have owned baselines, thresholds, and evidence classes | repository measurements are not universal capacity or production-sizing claims |
 
-Read [CLI Security and Safety](docs/bijux-cli/operations/security-and-safety.md)
+Read [CLI Security and Safety](https://bijux.io/bijux-core/bijux-cli/operations/security-and-safety/)
 before executing third-party plugins. Read
-[DAG Execution Security and Isolation](docs/bijux-dag/operations/security-isolation-truth.md)
+[DAG Execution Security and Isolation](https://bijux.io/bijux-core/bijux-dag/operations/security-isolation-truth/)
 before treating a backend, container, or path policy as a security boundary.
 
 ## What The Repository Proves
@@ -224,9 +254,9 @@ The repository proves more than command availability:
 
 Each proof is bounded by its selected command, backend, evidence, environment,
 and source revision; none is a blanket production claim. The
-[DAG execution model](docs/bijux-dag/architecture/execution-model.md) explains
+[DAG execution model](https://bijux.io/bijux-core/bijux-dag/architecture/execution-model/) explains
 runtime authority, while the
-[Maintainer handbook](docs/bijux-dev/index.md) explains how repository and
+[Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) explains how repository and
 release claims are proved.
 
 ## Package Families
@@ -237,11 +267,11 @@ The public package families in this repository are:
 | Package | Purpose | Links |
 | --- | --- | --- |
 | `bijux-cli` | Public Rust runtime for the `bijux` command surface, including routing, runtime behavior, and deterministic output contracts. | <a href="https://crates.io/crates/bijux-cli"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-cli?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-cli"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-bijux--cli-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://pypi.org/project/bijux-cli/"><img alt="PyPI" src="https://img.shields.io/pypi/v/bijux-cli?label=PyPI&logo=pypi" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-cli/packages/bijux-cli/"><img alt="Docs" src="https://img.shields.io/badge/docs-bijux--cli-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-cli"><img alt="GHCR" src="https://img.shields.io/badge/bijux--cli-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-cli"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
-| `bijux-dag-artifacts` | Artifact identity, storage layout, retention, integrity, and lineage helpers for retained DAG run evidence. | <a href="https://crates.io/crates/bijux-dag-artifacts"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-artifacts?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-artifacts"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-artifacts-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/"><img alt="Docs" src="https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-artifacts"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
-| `bijux-dag-core` | Deterministic graph kernel for parsing, validation, canonicalization, planning, and semantic identity. | <a href="https://crates.io/crates/bijux-dag-core"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-core?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-core"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-core-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/"><img alt="Docs" src="https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-core"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
-| `bijux-dag-runtime` | Execution engine and replay policy layer for DAG runs, cache decisions, and retained runtime diagnostics. | <a href="https://crates.io/crates/bijux-dag-runtime"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-runtime?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-runtime"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-runtime-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/"><img alt="Docs" src="https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
-| `bijux-dag-app` | Application orchestration and response-shaping layer that turns DAG runtime behavior into user-facing workflows. | <a href="https://crates.io/crates/bijux-dag-app"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-app?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-app"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-app-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/"><img alt="Docs" src="https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-app"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
-| `bijux-dag-cli` | Installable `bijux-dag` command package for validating, running, replaying, and inspecting DAG workflows. | <a href="https://crates.io/crates/bijux-dag-cli"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-cli?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-cli"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/"><img alt="Docs" src="https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag"><img alt="GHCR" src="https://img.shields.io/badge/bijux--dag-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-dag-artifacts` | Artifact identity, storage layout, retention, integrity, and lineage helpers for retained DAG run evidence. | <a href="https://crates.io/crates/bijux-dag-artifacts"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-artifacts?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-artifacts"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-artifacts-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-artifacts/"><img alt="Docs" src="https://img.shields.io/badge/docs-artifacts-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-artifacts"><img alt="GHCR" src="https://img.shields.io/badge/artifacts-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-artifacts"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-dag-core` | Deterministic graph kernel for parsing, validation, canonicalization, planning, and semantic identity. | <a href="https://crates.io/crates/bijux-dag-core"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-core?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-core"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-core-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-core/"><img alt="Docs" src="https://img.shields.io/badge/docs-core-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-core"><img alt="GHCR" src="https://img.shields.io/badge/core-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-core"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-dag-runtime` | Execution engine and replay policy layer for DAG runs, cache decisions, and retained runtime diagnostics. | <a href="https://crates.io/crates/bijux-dag-runtime"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-runtime?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-runtime"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-runtime-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/"><img alt="Docs" src="https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-runtime"><img alt="GHCR" src="https://img.shields.io/badge/runtime-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-runtime"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-dag-app` | Application orchestration and response-shaping layer that turns DAG runtime behavior into user-facing workflows. | <a href="https://crates.io/crates/bijux-dag-app"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-app?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-app"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-app-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-app/"><img alt="Docs" src="https://img.shields.io/badge/docs-app-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-app"><img alt="GHCR" src="https://img.shields.io/badge/app-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-app"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
+| `bijux-dag-cli` | Installable `bijux-dag` command package for validating, running, replaying, and inspecting DAG workflows. | <a href="https://crates.io/crates/bijux-dag-cli"><img alt="Crates.io" src="https://img.shields.io/crates/v/bijux-dag-cli?label=crates.io&logo=rust" height="18"></a> <a href="https://docs.rs/bijux-dag-cli"><img alt="Rust docs" src="https://img.shields.io/badge/rust--docs-bijux--dag-DEA584?logo=rust&logoColor=white" height="18"></a> <a href="https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-cli/"><img alt="Docs" src="https://img.shields.io/badge/docs-bijux--dag-2563EB?logo=materialformkdocs&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/pkgs/container/bijux-core%2Fbijux-dag-cli"><img alt="GHCR" src="https://img.shields.io/badge/bijux--dag-ghcr-181717?logo=github&logoColor=white" height="18"></a> <a href="https://github.com/bijux/bijux-core/tree/main/crates/bijux-dag-cli"><img alt="Source" src="https://img.shields.io/badge/source-181717?logo=github&logoColor=white" height="18"></a> |
 <!-- bijux-core-package-map:generated:end -->
 
 ### Private Support Packages
@@ -250,16 +280,16 @@ Three workspace packages are intentionally excluded from crates.io:
 
 | Package | Repository responsibility | Contract |
 | --- | --- | --- |
-| `bijux-cli-python` | builds and tests the public Python distribution without becoming a separate Cargo release | [Python package contracts](crates/bijux-cli-python/docs/CONTRACTS.md) |
-| `bijux-dag-testkit` | provides deterministic fixtures and assertions to repository tests only | [Testkit contracts](crates/bijux-dag-testkit/docs/CONTRACTS.md) |
-| `bijux-dev` | implements repository governance, report generation, and release evidence | [Maintainer contracts](crates/bijux-dev/docs/CONTRACTS.md) |
+| `bijux-cli-python` | builds and tests the public Python distribution without becoming a separate Cargo release | [Python package contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-cli-python/docs/CONTRACTS.md) |
+| `bijux-dag-testkit` | provides deterministic fixtures and assertions to repository tests only | [Testkit contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-testkit/docs/CONTRACTS.md) |
+| `bijux-dev` | implements repository governance, report generation, and release evidence | [Maintainer contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/CONTRACTS.md) |
 
 Private means unavailable as a crates.io dependency. It does not mean
 unsupported or ungoverned: each package has an explicit boundary and focused
 verification.
 
 The canonical package publication boundary lives in
-[`docs/bijux-core/foundation/package-boundary.md`](docs/bijux-core/foundation/package-boundary.md)
+[`docs/bijux-core/foundation/package-boundary.md`](https://bijux.io/bijux-core/bijux-core/foundation/package-boundary/)
 and `contracts/foundation/workspace_package_boundary.v1.json`.
 
 ## Develop The Repository
@@ -287,7 +317,7 @@ make test
 `make test` runs the fast Rust lane and Python tests not marked `nightly`.
 It does not run governed slow Rust tests, ignored Rust tests, Python nightly
 tests, documentation checks, or lint. Use
-[Testing And Validation](docs/bijux-core/operations/testing-and-validation.md)
+[Testing And Validation](https://bijux.io/bijux-core/bijux-core/operations/testing-and-validation/)
 to select a broader lane without overstating what passed.
 
 Before review, add the gates owned by the changed surface. Documentation
@@ -299,12 +329,12 @@ Python checks in addition to Rust verification.
 
 | Question | Authority |
 | --- | --- |
-| how do I run a checked-in workflow? | [Executable Examples](docs/bijux-dag/interfaces/runnable-examples.md) |
-| which retained files prove a run? | [Run Evidence Layout](docs/bijux-dag/interfaces/run-evidence-layout.md) |
-| what makes two runs equivalent? | [Reproducibility Model](docs/bijux-dag/interfaces/reproducibility-model.md) |
-| what isolation is actually enforced? | [Execution Security And Isolation](docs/bijux-dag/operations/security-isolation-truth.md) |
-| how are repository docs divided? | [Documentation System](docs/bijux-core/foundation/documentation-system.md) |
-| which package owns a behavior? | [Package Ownership](docs/bijux-core/governance/package-ownership.md) and the owning crate's contracts page |
+| how do I run a checked-in workflow? | [Executable Examples](https://bijux.io/bijux-core/bijux-dag/interfaces/runnable-examples/) |
+| which retained files prove a run? | [Run Evidence Layout](https://bijux.io/bijux-core/bijux-dag/interfaces/run-evidence-layout/) |
+| what makes two runs equivalent? | [Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/) |
+| what isolation is actually enforced? | [Execution Security And Isolation](https://bijux.io/bijux-core/bijux-dag/operations/security-isolation-truth/) |
+| how are repository docs divided? | [Documentation System](https://bijux.io/bijux-core/bijux-core/foundation/documentation-system/) |
+| which package owns a behavior? | [Package Ownership](https://bijux.io/bijux-core/bijux-core/governance/package-ownership/) and the owning crate's contracts page |
 | how do maintainers validate changes? | [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/) |
 
 Use the public handbook for supported behavior, the owning crate contract for

@@ -4,24 +4,24 @@
 [![Crates.io](https://img.shields.io/crates/v/bijux-dag-runtime?label=crates.io&logo=rust)](https://crates.io/crates/bijux-dag-runtime)
 [![Rust docs](https://img.shields.io/badge/rust--docs-runtime-DEA584?logo=rust&logoColor=white)](https://docs.rs/bijux-dag-runtime)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-0F766E)](https://github.com/bijux/bijux-core/blob/main/LICENSE)
-[![CI Status](https://github.com/bijux/bijux-core/workflows/repo%20/%20ci/badge.svg)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI Status](https://github.com/bijux/bijux-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bijux/bijux-core/actions/workflows/ci.yml?query=branch%3Amain)
 [![GitHub Repository](https://img.shields.io/badge/github-bijux%2Fbijux--core-181717?logo=github)](https://github.com/bijux/bijux-core)
 
-[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-core/) [![bijux-dag-runtime docs](https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)
+[![Repository docs](https://img.shields.io/badge/docs-repository-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/) [![bijux-dag-runtime docs](https://img.shields.io/badge/docs-runtime-2563EB?logo=materialformkdocs&logoColor=white)](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)
 <!-- bijux-core-badges:generated:end -->
 
 `bijux-dag-runtime` is the execution engine for `bijux-dag`. It handles
 runtime planning, scheduling, adapter invocation boundaries, policy checks,
 replay classification, cache behavior, and trace emission.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. This crate is the
 runtime layer that executes, records, replays, and verifies that promise.
 
 ## Release Status
 
-- public crate on the `v0.4.0` DAG release line
+- public crate on the `v0.4.1` DAG release line
 - execution-time layer for the local-first controller
 - stable local, Kubernetes Job, and shared-filesystem SLURM execution lanes
 - modeled remote-worker and generic scheduler contracts that remain outside
@@ -77,12 +77,12 @@ Use these rules when reviewing runtime fingerprint drift or provenance output.
 
 | Boundary | Runtime commitment | Authority |
 | --- | --- | --- |
-| external adapters | descriptor handshake, explicit execution paths, typed failure information, and adapter-binary identity in cache evidence | [Adapter Contract](../../docs/spec/ADAPTER_CONTRACT.md) |
-| Kubernetes | container nodes submitted as Jobs, shared-volume workspace mapping, resource and deadline mapping, pod-state mapping, logs, and retained batch evidence | [Batch Execution Model](../../docs/spec/BATCH_EXECUTION_MODEL.md) |
-| SLURM | shared-filesystem jobs submitted with `sbatch`, polled with `sacct`, and collected into the retained node result | [Batch Execution Model](../../docs/spec/BATCH_EXECUTION_MODEL.md) |
-| retained lifecycle evidence | terminal status, validated lifecycle transitions, per-attempt output, and bounded log summaries | [Run Evidence Layout](../../docs/bijux-dag/interfaces/run-evidence-layout.md) |
-| subprocess cleanup | process-group termination on Unix and explicit best-effort behavior on other hosts | [Execution Security And Isolation](../../docs/bijux-dag/operations/security-isolation-truth.md) |
-| replay and cache | identity-aware reuse, refusal evidence, and replay verification | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
+| external adapters | descriptor handshake, explicit execution paths, typed failure information, and adapter-binary identity in cache evidence | [Adapter Contract](https://github.com/bijux/bijux-core/blob/main/docs/spec/ADAPTER_CONTRACT.md) |
+| Kubernetes | container nodes submitted as Jobs, shared-volume workspace mapping, resource and deadline mapping, pod-state mapping, logs, and retained batch evidence | [Batch Execution Model](https://github.com/bijux/bijux-core/blob/main/docs/spec/BATCH_EXECUTION_MODEL.md) |
+| SLURM | shared-filesystem jobs submitted with `sbatch`, polled with `sacct`, and collected into the retained node result | [Batch Execution Model](https://github.com/bijux/bijux-core/blob/main/docs/spec/BATCH_EXECUTION_MODEL.md) |
+| retained lifecycle evidence | terminal status, validated lifecycle transitions, per-attempt output, and bounded log summaries | [Run Evidence Layout](https://bijux.io/bijux-core/bijux-dag/interfaces/run-evidence-layout/) |
+| subprocess cleanup | process-group termination on Unix and explicit best-effort behavior on other hosts | [Execution Security And Isolation](https://bijux.io/bijux-core/bijux-dag/operations/security-isolation-truth/) |
+| replay and cache | identity-aware reuse, refusal evidence, and replay verification | [Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/) |
 
 These boundaries are observable contracts, not claims of host isolation.
 Shell execution is not a VM boundary. Kubernetes and SLURM support is bounded
@@ -146,35 +146,35 @@ of the batch-lane promise.
 
 | Claim | Repository-backed proof |
 | --- | --- |
-| container inputs, outputs, and engine identity | [Container Packaging Workflow](../../docs/bijux-dag/operations/container-packaging-workflow.md) |
-| Kubernetes and shared-filesystem SLURM support boundary | [Execution Mode Responsibilities](../../docs/bijux-dag/architecture/execution-mode-responsibilities.md) |
-| cache reuse, invalidation, corruption refusal, and miss explanation | [Cache Behavior Workflow](../../docs/bijux-dag/operations/cache-behavior-workflow.md) |
-| graph, execution, cache, and replay identity | [Reproducibility Model](../../docs/bijux-dag/interfaces/reproducibility-model.md) |
-| branch selection, skipped lanes, and replay stability | [Branching Bulletin Workflow](../../docs/bijux-dag/operations/branching-bulletin-workflow.md) |
-| retry evidence and focused replay repair | [Compliance-Gated Bulletin Workflow](../../docs/bijux-dag/operations/compliance-gated-bulletin-workflow.md) |
+| container inputs, outputs, and engine identity | [Container Packaging Workflow](https://bijux.io/bijux-core/bijux-dag/operations/container-packaging-workflow/) |
+| Kubernetes and shared-filesystem SLURM support boundary | [Execution Mode Responsibilities](https://bijux.io/bijux-core/bijux-dag/architecture/execution-mode-responsibilities/) |
+| cache reuse, invalidation, corruption refusal, and miss explanation | [Cache Behavior Workflow](https://bijux.io/bijux-core/bijux-dag/operations/cache-behavior-workflow/) |
+| graph, execution, cache, and replay identity | [Reproducibility Model](https://bijux.io/bijux-core/bijux-dag/interfaces/reproducibility-model/) |
+| branch selection, skipped lanes, and replay stability | [Branching Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/branching-bulletin-workflow/) |
+| retry evidence and focused replay repair | [Compliance-Gated Bulletin Workflow](https://bijux.io/bijux-core/bijux-dag/operations/compliance-gated-bulletin-workflow/) |
 
 Schedule and backfill flows remain internal workflow lanes in v0.4.x. Their
 presence in repository evidence is not a public runtime commitment.
 
 ## Internal Documentation
 
-- [`ADAPTERS_AND_BACKENDS.md`](docs/ADAPTERS_AND_BACKENDS.md): adapter
+- [`ADAPTERS_AND_BACKENDS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/ADAPTERS_AND_BACKENDS.md): adapter
   handshake, backend capabilities, containers, batch execution, and refusals.
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): execution flow, source
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/ARCHITECTURE.md): execution flow, source
   boundaries, dependency direction, stable exports, and extension decisions.
-- [`CACHE_REPLAY_AND_EVIDENCE.md`](docs/CACHE_REPLAY_AND_EVIDENCE.md): cache
+- [`CACHE_REPLAY_AND_EVIDENCE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/CACHE_REPLAY_AND_EVIDENCE.md): cache
   identity, hit validation, replay eligibility, persistence, and repair.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): owned execution semantics, effects,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/CONTRACTS.md): owned execution semantics, effects,
   state, backend, cache, replay, and failure contracts.
-- [`EXECUTION_AND_SCHEDULING.md`](docs/EXECUTION_AND_SCHEDULING.md): admission,
+- [`EXECUTION_AND_SCHEDULING.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/EXECUTION_AND_SCHEDULING.md): admission,
   readiness, attempts, retries, cancellation, state invariants, and recovery.
-- [`FAILURE_AND_CANCELLATION.md`](docs/FAILURE_AND_CANCELLATION.md): failure
+- [`FAILURE_AND_CANCELLATION.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/FAILURE_AND_CANCELLATION.md): failure
   classes, success acceptance, retry eligibility, cancellation propagation,
   and retained recovery evidence.
 
 ## Related links
 
-- [Crate contracts](docs/CONTRACTS.md)
-- [Crate changelog](./CHANGELOG.md)
+- [Crate contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/docs/CONTRACTS.md)
+- [Crate changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dag-runtime/CHANGELOG.md)
 - [DAG handbook](https://bijux.io/bijux-core/bijux-dag/)
 - [Package docs](https://bijux.io/bijux-core/bijux-dag/packages/bijux-dag-runtime/)

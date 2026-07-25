@@ -37,7 +37,7 @@ behavioral regression, not an optimization.
 
 ```mermaid
 flowchart TB
-    graph["parse and validate graph"]
+    graph_admission["parse and validate graph"]
     plan["canonicalize and plan"]
     ready["evaluate readiness and triggers"]
     attempt["dispatch node attempt"]
@@ -45,7 +45,7 @@ flowchart TB
     evidence["finalize traces, outputs, and artifacts"]
     verify["verify, replay, diff, or inspect"]
 
-    graph --> plan --> ready --> attempt --> backend --> evidence --> verify
+    graph_admission --> plan --> ready --> attempt --> backend --> evidence --> verify
     evidence -->|"newly ready nodes"| ready
 ```
 

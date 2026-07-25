@@ -4,6 +4,17 @@ All notable changes to **bijux-dag-artifacts** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-dag-artifacts` to the `v0.4.1` workspace release line.
+- Canonicalized README links to retained-evidence guidance, package contracts,
+  and deployed package documentation.
+
+### Fixed
+- Added a dedicated `bijux-dag-artifacts` GHCR target matching its crates.io
+  package identity.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

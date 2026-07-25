@@ -162,14 +162,14 @@ identity are preserved. Diagnose delay from the controller outward:
 
 ```mermaid
 flowchart LR
-    graph["graph and plan identity"]
+    execution_identity["graph and plan identity"]
     scheduler["ready · queued · blocked · inflight"]
     backend["launch and observation"]
     attempts["attempt duration and retry"]
     finalize["hash · index · lineage · cleanup"]
     compare["cross-run comparison"]
 
-    graph --> scheduler --> backend --> attempts --> finalize --> compare
+    execution_identity --> scheduler --> backend --> attempts --> finalize --> compare
 ```
 
 Do not derive capacity from node count alone. A defensible measurement binds

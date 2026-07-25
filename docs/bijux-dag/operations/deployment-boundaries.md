@@ -21,7 +21,7 @@ service are not part of this release boundary.
 
 ```mermaid
 flowchart TB
-    graph["graph · inputs · policy"]
+    workflow_contract["graph · inputs · policy"]
     controller["bijux-dag controller"]
     backend{"selected backend"}
     local["host process or local container"]
@@ -30,7 +30,7 @@ flowchart TB
     evidence["manifest · attempts · traces<br/>outputs · backend evidence"]
     verify["strict verification<br/>comparison or replay"]
 
-    graph --> controller --> backend
+    workflow_contract --> controller --> backend
     backend --> local --> evidence
     backend --> slurm --> evidence
     backend --> kube --> evidence

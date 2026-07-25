@@ -4,6 +4,20 @@ All notable changes to **bijux-dag-runtime** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-dag-runtime` and its workspace dependency constraints to the
+  `v0.4.1` release line.
+- Updated the shared `base64` dependency and canonicalized README links to
+  backend contracts, workflow evidence, and deployed operator guidance.
+
+### Fixed
+- Added a dedicated `bijux-dag-runtime` GHCR target matching its crates.io
+  package identity.
+- Kept internal backend specifications on stable GitHub source links rather
+  than presenting them as publicly deployed handbook pages.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

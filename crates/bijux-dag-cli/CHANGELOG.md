@@ -4,6 +4,18 @@ All notable changes to **bijux-dag-cli** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-dag-cli` and its application dependency constraint to the
+  `v0.4.1` release line.
+- Canonicalized README links to executable examples, operator workflows,
+  package contracts, and deployed documentation.
+
+### Fixed
+- Added a dedicated `bijux-dag-cli` GHCR target matching its crates.io package
+  identity and installed `bijux-dag` executable.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

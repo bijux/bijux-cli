@@ -12,7 +12,7 @@ last_reviewed: 2026-07-19
 Use this page to choose a trustworthy starting point. It deliberately does not
 copy command sequences from the pages that execute and verify them.
 
-`bijux-dag` v0.4.0 is a local-first DAG runtime for reproducible workflows
+`bijux-dag` v0.4.1 is a local-first DAG runtime for reproducible workflows
 with explicit graph contracts, deterministic execution records, verified
 artifacts, cache explanation, and replayable run bundles. The
 [Release Boundary](../foundation/release-boundary.md) classifies each command

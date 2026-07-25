@@ -1183,17 +1183,34 @@
           "type": "json",
           "value": [
             {
-              "package_slug": "bijux-cli"
+              "package_slug": "bijux-dag-core",
+              "artifact_name": "bijux-dag-release"
             },
             {
-              "package_slug": "bijux-dag"
+              "package_slug": "bijux-dag-artifacts",
+              "artifact_name": "bijux-dag-release"
+            },
+            {
+              "package_slug": "bijux-dag-runtime",
+              "artifact_name": "bijux-dag-release"
+            },
+            {
+              "package_slug": "bijux-dag-app",
+              "artifact_name": "bijux-dag-release"
+            },
+            {
+              "package_slug": "bijux-dag-cli",
+              "artifact_name": "bijux-dag-release"
+            },
+            {
+              "package_slug": "bijux-cli"
             }
           ]
         },
         {
           "key": "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES",
           "type": "string",
-          "value": "bijux-cli bijux-dag"
+          "value": "bijux-dag-core bijux-dag-artifacts bijux-dag-runtime bijux-dag-app bijux-dag-cli bijux-cli"
         },
         {
           "key": "BIJUX_PYPI_ENABLED",

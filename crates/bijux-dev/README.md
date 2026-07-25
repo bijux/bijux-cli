@@ -27,7 +27,7 @@ cargo run -p bijux-dev --bin bijux-dev-dag -- --help
 ```
 
 The exact visible `bijux-dev-dag` root command order is governed by
-[`contracts/foundation/maintainer_command_surface.v1.json`](../../contracts/foundation/maintainer_command_surface.v1.json).
+[`contracts/foundation/maintainer_command_surface.v1.json`](https://github.com/bijux/bijux-core/blob/main/contracts/foundation/maintainer_command_surface.v1.json).
 
 ## Package Boundary
 
@@ -98,25 +98,25 @@ documentation, or release lanes passed.
 
 ## Internal Documentation
 
-- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md): binary/source boundaries,
+- [`ARCHITECTURE.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/ARCHITECTURE.md): binary/source boundaries,
   dependency direction, effects, runtime adapters, and extension decisions.
-- [`COMMANDS_AND_SUITES.md`](docs/COMMANDS_AND_SUITES.md): command authority,
+- [`COMMANDS_AND_SUITES.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/COMMANDS_AND_SUITES.md): command authority,
   suite metadata, aggregation, advisory mode, overrides, and additions.
-- [`CONTRACTS.md`](docs/CONTRACTS.md): package, command effect, suite, report,
+- [`CONTRACTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/CONTRACTS.md): package, command effect, suite, report,
   Make/CI, dependency, and verification contracts.
-- [`EVIDENCE_AND_REPORTS.md`](docs/EVIDENCE_AND_REPORTS.md): evidence identity,
+- [`EVIDENCE_AND_REPORTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/EVIDENCE_AND_REPORTS.md): evidence identity,
   report families, generation, rendering, integrity, and review.
-- [`GOVERNANCE_AND_RELEASES.md`](docs/GOVERNANCE_AND_RELEASES.md): governance
+- [`GOVERNANCE_AND_RELEASES.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/GOVERNANCE_AND_RELEASES.md): governance
   domains, shared standards, release inputs, status, mutation, and ownership.
-- [`GOVERNED_OUTPUTS.md`](docs/GOVERNED_OUTPUTS.md): command effect classes,
+- [`GOVERNED_OUTPUTS.md`](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/GOVERNED_OUTPUTS.md): command effect classes,
   destination ownership, atomic generation, determinism, concurrency, and
   failure discipline.
 
 ## Maintainer References
 
-- [Package contracts](docs/CONTRACTS.md)
-- [Package changelog](./CHANGELOG.md)
-- [Maintainer handbook](../../docs/bijux-dev/index.md)
-- [Command surface](../../docs/bijux-dev/operations/command-surface.md)
-- [Repository gates](../../docs/bijux-dev/operations/repository-gates.md)
-- [Evidence collection](../../docs/bijux-dev/operations/evidence-collection.md)
+- [Package contracts](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/docs/CONTRACTS.md)
+- [Package changelog](https://github.com/bijux/bijux-core/blob/main/crates/bijux-dev/CHANGELOG.md)
+- [Maintainer handbook](https://bijux.io/bijux-core/bijux-dev/)
+- [Command surface](https://bijux.io/bijux-core/bijux-dev/operations/command-surface/)
+- [Repository gates](https://bijux.io/bijux-core/bijux-dev/operations/repository-gates/)
+- [Evidence collection](https://bijux.io/bijux-core/bijux-dev/operations/evidence-collection/)

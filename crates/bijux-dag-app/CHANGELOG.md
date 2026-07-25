@@ -4,6 +4,18 @@ All notable changes to **bijux-dag-app** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-dag-app` and its workspace dependency constraints to the
+  `v0.4.1` release line.
+- Updated the shared `base64` dependency and canonicalized README links to
+  package contracts, examples, and deployed workflow guidance.
+
+### Fixed
+- Added a dedicated `bijux-dag-app` GHCR target matching its crates.io package
+  identity.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

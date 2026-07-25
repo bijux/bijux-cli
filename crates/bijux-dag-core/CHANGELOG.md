@@ -4,6 +4,19 @@ All notable changes to **bijux-dag-core** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Changed
+- Advanced `bijux-dag-core` to the `v0.4.1` workspace release line.
+- Canonicalized README links to governed graph examples, package contracts,
+  and deployed reproducibility guidance.
+
+### Fixed
+- Added a dedicated `bijux-dag-core` GHCR target matching its crates.io package
+  identity.
+- Corrected Mermaid identifiers in the DAG handbook so graph and planning
+  diagrams render consistently.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added

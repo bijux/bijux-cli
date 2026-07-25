@@ -337,7 +337,7 @@ The retried run should now prove:
 - the durable backfill state retains the previous failed run id in
   `previous_run_ids`
 
-This is the honest current handoff for backfill work in `v0.4.0`: the
+This is the honest current handoff for backfill work in `v0.4.x`: the
 internal backfill lane expands, tracks, summarizes, and retries durable run
 requests, while DAG execution still runs explicitly with the emitted run ids
 and graph inputs.

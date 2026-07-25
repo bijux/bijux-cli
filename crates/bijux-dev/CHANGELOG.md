@@ -4,6 +4,26 @@ All notable changes to **bijux-dev** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## 0.4.1 – 2026-07-25
+
+### Added
+
+- Added release contract coverage requiring exact parity between public
+  crates.io packages and GHCR package slugs.
+- Added README public-link and Mermaid source checks to documentation
+  verification.
+- Added the existing reusable documentation deployment workflow to the version
+  tag release coordinator.
+
+### Changed
+
+- Advanced the maintainer control plane and its workspace dependency
+  constraints to the `v0.4.1` release line.
+- Documented trusted PyPI publication and canonicalized maintainer README links
+  to repository contracts and deployed handbook pages.
+
+The package remains repository-internal and is not a registry release target.
+
 ## 0.4.0 – 2026-07-24
 
 ### Added
