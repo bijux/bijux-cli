@@ -12,7 +12,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn mapping_entry<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
-    value.as_mapping()?.get(&Value::String(key.to_string()))
+    value.as_mapping()?.get(Value::String(key.to_string()))
 }
 
 fn workflow_documents() -> Vec<(String, Value)> {
@@ -48,7 +48,7 @@ fn workflow_events(document: &Value) -> &Mapping {
 }
 
 fn has_event(events: &Mapping, event: &str) -> bool {
-    events.contains_key(&Value::String(event.to_string()))
+    events.contains_key(Value::String(event.to_string()))
 }
 
 fn sequence_contains(value: Option<&Value>, expected: &str) -> bool {
@@ -92,15 +92,15 @@ fn only_repository_policy_runs_automatically_after_merge() {
 
     for (workflow_name, document) in workflow_documents() {
         let events = workflow_events(&document);
-        let Some(push) = events.get(&Value::String("push".to_string())).and_then(Value::as_mapping)
+        let Some(push) = events.get(Value::String("push".to_string())).and_then(Value::as_mapping)
         else {
             continue;
         };
 
-        if sequence_contains(push.get(&Value::String("branches".to_string())), "main") {
+        if sequence_contains(push.get(Value::String("branches".to_string())), "main") {
             main_push_workflows.push(workflow_name.clone());
         }
-        if push.contains_key(&Value::String("tags".to_string())) {
+        if push.contains_key(Value::String("tags".to_string())) {
             tag_push_workflows.push(workflow_name);
         }
     }
