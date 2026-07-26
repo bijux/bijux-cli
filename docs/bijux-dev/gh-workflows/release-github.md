@@ -11,11 +11,11 @@ last_reviewed: 2026-07-19
 
 `release-github.yml` owns the GitHub Release record and its attached files. It
 does not publish crates, PyPI distributions, or GHCR packages. Those are
-separate workflows called in parallel by `release-on-tag.yml`.
+separate workflows dispatched independently by a maintainer.
 
-The workflow is reusable and manually dispatchable. A stable `v*` tag enters
-through the tag orchestrator; a manual dispatch must resolve to an enabled,
-non-empty build matrix or it fails as a no-op configuration.
+The workflow runs only by manual dispatch. The dispatch must select a stable
+`v*` tag and resolve to an enabled, non-empty build matrix or it fails as a
+no-op configuration. A tag push alone does not create a GitHub Release.
 
 ## Current Release Shape
 
@@ -39,7 +39,7 @@ local Make surface but is not selected by this workflow configuration.
 For an eligible release, the workflow:
 
 1. builds every configured matrix entry without fail-fast cancellation;
-2. checks out the exact candidate commit and waits for `ci.yml` on tag pushes;
+2. checks out the exact tagged candidate commit;
 3. verifies that the commit carries a stable release tag;
 4. downloads the build artifacts from the current workflow run;
 5. creates or updates the GitHub Release for that tag.
@@ -50,6 +50,9 @@ overwritten, while the release record itself is not deleted unless
 tolerated by the current configuration, so maintainers must inspect the
 release's attached assets rather than treating record creation alone as proof
 that every intended artifact exists.
+
+Manual publication consumes an already validated tag; it does not rerun or
+wait for CI.
 
 ## Failure Meaning
 
@@ -64,7 +67,6 @@ failed workflow.
 
 ## Source Authorities
 
-- `.github/workflows/release-on-tag.yml`
 - `.github/workflows/release-github.yml`
 - `.github/workflows/release-artifacts.yml`
 - `.github/release.env`

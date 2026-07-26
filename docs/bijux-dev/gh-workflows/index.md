@@ -62,21 +62,20 @@ source validation has succeeded.
 
 | Workflow | Responsibility | Detailed guide |
 | --- | --- | --- |
-| `deploy-docs.yml` | strict build, Pages artifact, and deployment | [Documentation Deployment](deploy-docs.md) |
-| `release-on-tag.yml` | release fan-out for an accepted tag | [Release Surfaces](../makes/release-surfaces.md) |
+| `deploy-docs.yml` | manual `main` strict build, Pages artifact, and deployment | [Documentation Deployment](deploy-docs.md) |
 | `release-artifacts.yml` | reusable package artifact build | [Release Operations](../operations/release-operations.md) |
-| `release-crates.yml` | crates.io publication | [Rust Crates Release](release-crates.md) |
-| `release-pypi.yml` | Python package publication | [PyPI Release](release-pypi.md) |
-| `release-ghcr.yml` | container publication | [Release Operations](../operations/release-operations.md) |
-| `release-github.yml` | GitHub release and attached artifacts | [GitHub Release](release-github.md) |
+| `release-crates.yml` | manual crates.io publication for a selected stable tag | [Rust Crates Release](release-crates.md) |
+| `release-pypi.yml` | manual Python package publication for a selected stable tag | [PyPI Release](release-pypi.md) |
+| `release-ghcr.yml` | manual container publication for a selected stable tag | [Release Operations](../operations/release-operations.md) |
+| `release-github.yml` | manual GitHub release and attached artifacts for a selected stable tag | [GitHub Release](release-github.md) |
 
 ## Validation Before Publication
 
 Publication workflows consume accepted validation; they do not manufacture it
-after uploading begins. A release fan-out must preserve one version and source
-identity across crates, wheels, containers, attestations, and GitHub assets.
-Each registry is independently observable because a retry after partial
-publication is not equivalent to a first attempt.
+after uploading begins. Maintainers dispatch each lane for the same immutable
+version and source identity across crates, wheels, containers, attestations,
+and GitHub assets. Each registry is independently observable because a retry
+after partial publication is not equivalent to a first attempt.
 
 ## Failure Routing
 

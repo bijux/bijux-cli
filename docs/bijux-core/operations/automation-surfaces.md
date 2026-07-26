@@ -62,7 +62,7 @@ it does not acquire authority to hand-edit a managed downstream copy.
 | governed suite or evidence report | the owning `bijux-dev-cli` or `bijux-dev-dag` command, normally through Make |
 | hosted pull-request or policy check | a workflow that delegates to the same local target |
 | release validation | `make release-validate-rs` and the release control-plane checks |
-| tag publication | `release-on-tag.yml`, which delegates to registry-specific reusable workflows |
+| publication for an accepted tag | manually dispatch the required registry-specific release workflow with the immutable tag |
 | documentation validation or site build | `make docs-check`, `make bijux-docs-check`, or the documented narrower target |
 
 Call a lower-level script directly only while developing that implementation
