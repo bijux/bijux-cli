@@ -16,9 +16,7 @@ refresh standards rather than editing this repository copy directly.
 
 ## Invocation And Permissions
 
-- `workflow_dispatch` supports deliberate deployment from `main`, `master`, or
-  a `v*` tag
-- `workflow_call` allows an owning workflow to invoke the deployment
+- `workflow_dispatch` supports deliberate deployment from `main` only
 - `contents: read`, `pages: write`, and `id-token: write` are the complete
   workflow permissions
 - concurrency is scoped by Git ref and cancels an older in-progress deployment

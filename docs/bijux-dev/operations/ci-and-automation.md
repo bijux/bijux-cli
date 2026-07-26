@@ -55,12 +55,11 @@ the handbook choose one silently.
 
 | Workflow family | Responsibility | Evidence to inspect |
 | --- | --- | --- |
-| `deploy-docs.yml` | strict docs build, Pages artifact, and deployment | build log, uploaded Pages artifact, deployment status |
-| `release-on-tag.yml` | fan-out from a release tag | exact tag and called workflow revisions |
-| `release-crates.yml` | dependency-ordered crates.io publication | resolved package plan and per-package publish result |
-| `release-pypi.yml` | Python distribution publication | built wheel/sdist identity and trusted-publishing result |
-| `release-ghcr.yml` | container publication | image digest and source/tag labels |
-| `release-github.yml` | GitHub release record and attached artifacts | release plan, notes, and artifact checksums |
+| `deploy-docs.yml` | manual `main` docs build, Pages artifact, and deployment | build log, uploaded Pages artifact, deployment status |
+| `release-crates.yml` | manual dependency-ordered crates.io publication | selected tag, resolved package plan, and per-package publish result |
+| `release-pypi.yml` | manual Python distribution publication | selected tag, built wheel/sdist identity, and trusted-publishing result |
+| `release-ghcr.yml` | manual container publication | selected tag, image digest, and source labels |
+| `release-github.yml` | manual GitHub release record and attached artifacts | selected tag, release plan, notes, and artifact checksums |
 | `release-artifacts.yml` | reusable package artifact build | source revision, build target, and uploaded artifact identity |
 
 Release workflows are intentionally non-cancelling once publication starts.

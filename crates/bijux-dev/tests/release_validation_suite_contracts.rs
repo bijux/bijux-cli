@@ -256,7 +256,7 @@ fn public_dag_manifests_do_not_depend_on_private_testkit_release() {
 }
 
 #[test]
-fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
+fn release_validation_suite_entrypoints_and_triggers_are_governed() {
     let gh_makefile = read_repo_file("makes/gh.mk");
     let rust_makefile = read_repo_file("makes/rust.mk");
     let workflow = read_repo_file(".github/workflows/release-validation.yml");
@@ -280,12 +280,20 @@ fn release_validation_suite_entrypoints_are_wired_into_make_and_ci() {
         "release validation workflow must execute the CI make entrypoint"
     );
     assert!(
-        workflow.contains("branches:\n      - main"),
-        "release validation workflow must validate pushes to main"
-    );
-    assert!(
         workflow.contains("pull_request:"),
         "release validation workflow must validate pull requests"
+    );
+    assert!(
+        workflow.contains("workflow_dispatch:"),
+        "release validation workflow must support deliberate manual validation"
+    );
+    assert!(
+        !workflow.lines().any(|line| line.trim() == "push:"),
+        "release validation workflow must not repeat pull-request proof after merge"
+    );
+    assert!(
+        workflow.contains("github.event.pull_request.user.login != 'dependabot[bot]'"),
+        "release validation workflow must keep Dependabot pull requests notification-only"
     );
     assert!(
         operations_doc.contains("make release-validate-rs"),

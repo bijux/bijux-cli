@@ -17,22 +17,6 @@ on:
       - "evidence/**"
       - ".github/scripts/**"
       - ".github/workflows/*.yml"
-  push:
-    branches: [main]
-    paths:
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "rust-toolchain.toml"
-      - "crates/bijux-dag-*/**"
-      - "crates/bijux-dev/**"
-      - "configs/dag/**"
-      - "configs/rust/**"
-      - "makes/**"
-      - "docs/bijux-dag/**"
-      - "docs/bijux-dev/**"
-      - "evidence/**"
-      - ".github/scripts/**"
-      - ".github/workflows/*.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -47,6 +31,7 @@ env:
 jobs:
   canon:
     name: ${{ matrix.name }}
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.timeout_minutes }}
     continue-on-error: ${{ matrix.soft_fail }}
@@ -266,7 +251,7 @@ jobs:
 
   release-proof:
     name: Release Proof
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: canon
     runs-on: ubuntu-24.04
     timeout-minutes: 30

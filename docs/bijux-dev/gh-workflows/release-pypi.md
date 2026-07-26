@@ -10,9 +10,9 @@ last_reviewed: 2026-07-24
 # PyPI Release
 
 `release-pypi.yml` owns publication of the `bijux-cli` Python distribution.
-It is a reusable workflow with a manual-dispatch entrypoint. Tag pushes do not
-trigger it directly: `release-on-tag.yml` calls it alongside the crates.io,
-GHCR, and GitHub Release workflows.
+It runs only by manual dispatch. Tag pushes do not publish packages or invoke
+other release lanes. Maintainers dispatch PyPI, crates.io, GHCR, and GitHub
+Release publication independently for the same immutable stable tag.
 
 ## Eligibility
 
@@ -31,12 +31,14 @@ enabled run; a disabled manual run fails rather than appearing to publish.
 For an eligible Maturin release, the workflow:
 
 1. checks out the exact candidate commit with full tag history;
-2. waits for `ci.yml` on that commit when invoked by a tag push;
-3. prepares a clean release tree stamped with the tag version;
-4. builds a manylinux wheel and source distribution from
+2. prepares a clean release tree stamped with the tag version;
+3. builds a manylinux wheel and source distribution from
    `crates/bijux-cli-python/Cargo.toml`;
-5. publishes the prebuilt files from `artifacts/python/build` through PyPI
+4. publishes the prebuilt files from `artifacts/python/build` through PyPI
    trusted publishing.
+
+The lane consumes an already validated tag. It does not rerun or wait for CI
+during manual publication.
 
 For this repository, the managed `maturin` lane now uses the same trusted
 publisher action as the shared artifact mode. If trusted publishing fails only
@@ -59,7 +61,6 @@ retag a different commit with the same version.
 
 ## Source Authorities
 
-- `.github/workflows/release-on-tag.yml`
 - `.github/workflows/release-pypi.yml`
 - `.github/release.env`
 - `makes/gh.mk`

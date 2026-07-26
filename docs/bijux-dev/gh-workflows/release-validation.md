@@ -4,7 +4,7 @@ audience: maintainers
 type: operations
 status: canonical
 owner: bijux-dev-docs
-last_reviewed: 2026-07-19
+last_reviewed: 2026-07-27
 ---
 
 # Release Validation Workflow
@@ -17,8 +17,14 @@ candidate suite against the checked-out commit. It is a hosted adapter around
 
 The workflow runs for:
 
-- pushes to `main`;
-- every pull request, regardless of target branch.
+- pull requests opened by repository contributors;
+- deliberate manual dispatches when maintainers need fresh release evidence.
+
+It does not run on pushes to `main`, because the pull request already proves
+the merge candidate and repeating the same heavy suite after merge consumes
+runner quota without adding evidence. Dependabot pull requests skip the job and
+remain dependency notifications until a maintainer deliberately incorporates
+the update into a contributor branch.
 
 Concurrency is scoped by workflow and Git ref. A newer run cancels an older
 in-progress run for the same ref. Cancellation means superseded, not failed or

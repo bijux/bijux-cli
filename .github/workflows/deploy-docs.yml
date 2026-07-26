@@ -5,7 +5,6 @@ name: deploy-docs
 
 on:
   workflow_dispatch:
-  workflow_call:
 
 permissions:
   contents: read
@@ -154,12 +153,9 @@ jobs:
             exit 1
           fi
 
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            if [[ "${GITHUB_REF}" != "refs/heads/main" && "${GITHUB_REF}" != "refs/heads/master" && "${GITHUB_REF}" != refs/tags/v* ]]; then
-              echo "Manual dispatch would only build docs but skip deploy from ${GITHUB_REF}." >&2
-              echo "Dispatch deploy-docs from main/master or a v* tag when deployment is required." >&2
-              exit 1
-            fi
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Dispatch deploy-docs from main when deployment is required." >&2
+            exit 1
           fi
 
           {
@@ -316,7 +312,7 @@ jobs:
   deploy:
     name: Deploy docs site
     needs: build
-    if: ${{ needs.build.outputs.site_available == 'true' && (github.event_name == 'workflow_call' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')) }}
+    if: ${{ needs.build.outputs.site_available == 'true' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

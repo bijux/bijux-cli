@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Tag to publish (defaults to current tag on tag pushes)"
+        description: "Tag to publish (defaults to the selected workflow ref)"
         required: false
         type: string
       enabled:
@@ -22,49 +22,6 @@ on:
         description: "JSON array for package publication matrix"
         required: false
         type: string
-  workflow_call:
-    inputs:
-      release_tag:
-        required: false
-        type: string
-        default: ""
-      enabled:
-        required: false
-        type: boolean
-        default: false
-      build_matrix_json:
-        required: false
-        type: string
-        default: ""
-      package_matrix_json:
-        required: false
-        type: string
-        default: ""
-      artifact_suffix:
-        required: false
-        type: string
-        default: ""
-      package_ref_prefix:
-        required: false
-        type: string
-        default: ""
-      push_latest:
-        required: false
-        type: boolean
-        default: true
-      artifact_type:
-        required: false
-        type: string
-        default: ""
-      archive_media_type:
-        required: false
-        type: string
-        default: ""
-      oras_version:
-        required: false
-        type: string
-        default: ""
-
 permissions:
   contents: read
   actions: read
@@ -236,7 +193,6 @@ jobs:
             exit 1
           fi
 
-          build_matrix_json="$(filter_matrix "${build_matrix_json}" "${allowed_packages}")"
           package_matrix_json="$(filter_matrix "${package_matrix_json}" "${allowed_packages}")"
 
           if [[ "${build_matrix_json}" == "[]" || "${package_matrix_json}" == "[]" ]]; then

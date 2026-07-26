@@ -10,9 +10,9 @@ last_reviewed: 2026-07-19
 # Rust Crates Release
 
 `release-crates.yml` owns crates.io publication for the public Rust package
-surface. It is reusable and manually dispatchable. Stable tag pushes enter
-through `release-on-tag.yml`, which calls this lane independently of PyPI,
-GHCR, and GitHub Release publication.
+surface. It runs only by manual dispatch. The maintainer selects the immutable
+stable tag and dispatches this lane independently of PyPI, GHCR, and GitHub
+Release publication.
 
 ## Eligibility
 
@@ -44,9 +44,11 @@ packages and are not published as Rust crates.
 
 ## Publication Path
 
-For an eligible run, the workflow waits for `ci.yml` on a tag push, resolves
-the unpublished package set, verifies `CARGO_REGISTRY_TOKEN`, and passes the
-tag-derived version and package list to `make publish-rs`.
+For an eligible run, the workflow resolves the unpublished package set,
+verifies `CARGO_REGISTRY_TOKEN`, and passes the tag-derived version and package
+list to `make publish-rs`. Manual dispatch does not rerun or wait for CI;
+maintainers dispatch only after the selected tag's required validation is
+green.
 
 The Make target creates a clean release tree stamped with the release version,
 resolves each package version from Cargo metadata, and invokes
@@ -64,7 +66,6 @@ continue in dependency order.
 
 ## Source Authorities
 
-- `.github/workflows/release-on-tag.yml`
 - `.github/workflows/release-crates.yml`
 - `.github/release.env`
 - `makes/gh.mk`
