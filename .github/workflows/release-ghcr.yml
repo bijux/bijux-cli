@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Tag to publish (defaults to current tag on tag pushes)"
+        description: "Tag to publish (defaults to the selected workflow ref)"
         required: false
         type: string
       enabled:
