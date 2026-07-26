@@ -30,49 +30,6 @@ on:
         description: "Allow token bootstrap only when package does not yet exist on PyPI"
         required: false
         type: boolean
-  workflow_call:
-    inputs:
-      release_tag:
-        required: false
-        type: string
-        default: ""
-      enabled:
-        required: false
-        type: boolean
-        default: false
-      mode:
-        required: false
-        type: string
-        default: ""
-      build_matrix_json:
-        required: false
-        type: string
-        default: ""
-      package_matrix_json:
-        required: false
-        type: string
-        default: ""
-      artifact_suffix:
-        required: false
-        type: string
-        default: ""
-      environment_name:
-        required: false
-        type: string
-        default: ""
-      publish_auth_default:
-        required: false
-        type: string
-        default: ""
-      skip_existing:
-        required: false
-        type: boolean
-        default: true
-      allow_token_bootstrap_on_missing:
-        required: false
-        type: boolean
-        default: true
-
 permissions:
   contents: read
   actions: read

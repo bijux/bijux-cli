@@ -424,6 +424,20 @@ fn release_publication_stays_manual_and_decoupled_from_tag_pushes() {
         "bijux-core should not auto-dispatch release publication from tag pushes"
     );
 
+    for workflow_name in
+        ["release-crates.yml", "release-ghcr.yml", "release-github.yml", "release-pypi.yml"]
+    {
+        let workflow = read_repo_file(&format!(".github/workflows/{workflow_name}"));
+        assert!(
+            workflow.contains("workflow_dispatch:"),
+            "{workflow_name} should remain manually dispatchable"
+        );
+        assert!(
+            !workflow.contains("workflow_call:") && !workflow.contains("\n  push:"),
+            "{workflow_name} should expose only manual publication"
+        );
+    }
+
     let deploy_docs_workflow = read_repo_file(".github/workflows/deploy-docs.yml");
     assert!(
         deploy_docs_workflow.contains("workflow_dispatch:"),
