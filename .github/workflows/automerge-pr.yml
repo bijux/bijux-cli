@@ -14,6 +14,7 @@ permissions:
 jobs:
   policy-gate:
     name: policy-prerequisites
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository policy scripts
@@ -29,6 +30,7 @@ jobs:
 
   enable:
     needs: policy-gate
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Enable auto-merge when CODEOWNERS approval is present
