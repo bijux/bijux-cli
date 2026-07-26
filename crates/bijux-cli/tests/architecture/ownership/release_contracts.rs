@@ -418,27 +418,34 @@ fn github_release_workflow_publishes_release_assets_from_the_stamped_release_tre
 }
 
 #[test]
-fn tag_release_coordinator_invokes_publication_and_docs_workflows() {
-    let workflow = read_repo_file(".github/workflows/release-on-tag.yml");
+fn release_publication_stays_manual_and_decoupled_from_tag_pushes() {
     assert!(
-        workflow.contains("tags:\n      - \"v*\""),
-        "release-on-tag must remain restricted to version tags"
+        !repo_root().join(".github/workflows/release-on-tag.yml").exists(),
+        "bijux-core should not auto-dispatch release publication from tag pushes"
     );
-    for reusable_workflow in [
-        "release-crates.yml",
-        "release-pypi.yml",
-        "release-ghcr.yml",
-        "release-github.yml",
-        "deploy-docs.yml",
-    ] {
-        assert!(
-            workflow.contains(&format!("uses: ./.github/workflows/{reusable_workflow}")),
-            "release-on-tag must invoke {reusable_workflow}"
-        );
-    }
+
+    let deploy_docs_workflow = read_repo_file(".github/workflows/deploy-docs.yml");
     assert!(
-        workflow.contains("pages: write"),
-        "release-on-tag must grant the reusable docs deployment workflow Pages access"
+        deploy_docs_workflow.contains("workflow_dispatch:"),
+        "deploy-docs should remain manually dispatchable"
+    );
+    assert!(
+        !deploy_docs_workflow.contains("workflow_call:"),
+        "deploy-docs should stay manual-only instead of being reused from release automation"
+    );
+
+    let release_validation_workflow = read_repo_file(".github/workflows/release-validation.yml");
+    assert!(
+        release_validation_workflow.contains("pull_request:"),
+        "release-validation should continue protecting pull requests"
+    );
+    assert!(
+        release_validation_workflow.contains("workflow_dispatch:"),
+        "release-validation should remain available for explicit manual audits"
+    );
+    assert!(
+        !release_validation_workflow.contains("push:\n    branches:\n      - main"),
+        "release-validation should not rerun the full release gate automatically after merges to main"
     );
 }
 
@@ -554,6 +561,19 @@ fn release_build_matrices_cover_cli_and_dag_release_families() {
         shell_assignment_value(&release_env, "BIJUX_GHCR_RELEASE_ALLOWED_PACKAGES").as_deref(),
         Some(expected_public_crates_value.as_str()),
         ".github/release.env must explicitly allow the full public crate GHCR release set"
+    );
+}
+
+#[test]
+fn ghcr_release_workflow_keeps_shared_build_families_intact() {
+    let workflow = read_repo_file(".github/workflows/release-ghcr.yml");
+    assert!(
+        !workflow.contains("build_matrix_json=\"$(filter_matrix"),
+        "release-ghcr must not filter the shared build matrix by the per-package GHCR allowlist"
+    );
+    assert!(
+        workflow.contains("package_matrix_json=\"$(filter_matrix"),
+        "release-ghcr should continue filtering the publish matrix by the GHCR allowlist"
     );
 }
 

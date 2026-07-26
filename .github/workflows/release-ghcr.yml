@@ -236,7 +236,6 @@ jobs:
             exit 1
           fi
 
-          build_matrix_json="$(filter_matrix "${build_matrix_json}" "${allowed_packages}")"
           package_matrix_json="$(filter_matrix "${package_matrix_json}" "${allowed_packages}")"
 
           if [[ "${build_matrix_json}" == "[]" || "${package_matrix_json}" == "[]" ]]; then
