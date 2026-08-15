@@ -40,7 +40,7 @@ jobs:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           components: rustfmt
       - name: "Restore the Rust cache"
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: "Run repository formatting gate"
         run: "make fmt"
     if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
@@ -63,7 +63,7 @@ jobs:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           components: clippy
       - name: "Restore the Rust cache"
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: "Run repository lint gate"
         run: "make lint"
     if: "${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}"
@@ -85,7 +85,7 @@ jobs:
         with:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
       - name: "Restore the Rust cache"
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: "Install Rust security tools"
         run: "make gh-security-install-rust-tools"
       - name: "Run repository audit gate"
@@ -109,7 +109,7 @@ jobs:
         with:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
       - name: "Restore the Rust cache"
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: "Install cargo-nextest"
         run: "make gh-test-install-rust-tools"
       - name: "Run repository test gate"
